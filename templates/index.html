@@ -1,0 +1,714 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>⚽ SoccerBurst - 盘口扫描器</title>
+  <style>
+    :root {
+      --bg: #0d1117;
+      --card: #161b22;
+      --border: #30363d;
+      --text: #e6edf3;
+      --muted: #8b949e;
+      --green: #3fb950;
+      --red: #f85149;
+      --yellow: #d29922;
+      --blue: #58a6ff;
+      --orange: #e3b341;
+      --alert-bg: #2d1b1b;
+      --alert-border: #f85149;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Microsoft YaHei", sans-serif;
+      min-height: 100vh;
+    }
+
+    /* ── Header ── */
+    header {
+      background: var(--card);
+      border-bottom: 1px solid var(--border);
+      padding: 16px 24px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+
+    .logo {
+      font-size: 22px;
+      font-weight: 700;
+      letter-spacing: 1px;
+    }
+
+    .logo span { color: var(--green); }
+
+    .header-right {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+
+    /* ── Status Bar ── */
+    .status-bar {
+      background: var(--card);
+      border-bottom: 1px solid var(--border);
+      padding: 10px 24px;
+      display: flex;
+      align-items: center;
+      gap: 24px;
+      font-size: 13px;
+      color: var(--muted);
+      flex-wrap: wrap;
+    }
+
+    .status-item { display: flex; align-items: center; gap: 6px; }
+
+    .dot {
+      width: 8px; height: 8px;
+      border-radius: 50%;
+      background: var(--muted);
+    }
+    .dot.scanning { background: var(--yellow); animation: pulse 1s infinite; }
+    .dot.ok { background: var(--green); }
+    .dot.error { background: var(--red); }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.3; }
+    }
+
+    /* ── Main ── */
+    main { padding: 24px; max-width: 1400px; margin: 0 auto; }
+
+    /* ── Summary Cards ── */
+    .summary {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 16px;
+      margin-bottom: 24px;
+    }
+
+    .summary-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 20px;
+      text-align: center;
+    }
+
+    .summary-card .value {
+      font-size: 36px;
+      font-weight: 700;
+      line-height: 1;
+      margin-bottom: 6px;
+    }
+
+    .summary-card .label { font-size: 13px; color: var(--muted); }
+    .summary-card.alert-card { border-color: var(--red); background: var(--alert-bg); }
+    .summary-card.alert-card .value { color: var(--red); }
+
+    /* ── Toolbar ── */
+    .toolbar {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 20px;
+      flex-wrap: wrap;
+    }
+
+    .btn {
+      padding: 8px 18px;
+      border-radius: 6px;
+      border: 1px solid var(--border);
+      background: var(--card);
+      color: var(--text);
+      font-size: 14px;
+      cursor: pointer;
+      transition: all 0.2s;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .btn:hover { background: #21262d; border-color: var(--blue); }
+    .btn.primary { background: var(--blue); border-color: var(--blue); color: #000; font-weight: 600; }
+    .btn.primary:hover { background: #79c0ff; }
+    .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+    .filter-tabs {
+      display: flex;
+      gap: 4px;
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 3px;
+    }
+
+    .filter-tab {
+      padding: 5px 14px;
+      border-radius: 4px;
+      font-size: 13px;
+      cursor: pointer;
+      color: var(--muted);
+      transition: all 0.2s;
+      border: none;
+      background: transparent;
+    }
+
+    .filter-tab.active {
+      background: #21262d;
+      color: var(--text);
+    }
+
+    /* ── Match Cards ── */
+    .matches-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(420px, 1fr));
+      gap: 16px;
+    }
+
+    .match-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      overflow: hidden;
+      transition: border-color 0.2s;
+    }
+
+    .match-card:hover { border-color: var(--blue); }
+
+    .match-card.alert {
+      border-color: var(--red);
+      box-shadow: 0 0 12px rgba(248, 81, 73, 0.2);
+    }
+
+    .match-header {
+      padding: 14px 16px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .match-teams {
+      font-size: 15px;
+      font-weight: 600;
+    }
+
+    .match-teams .vs {
+      color: var(--muted);
+      font-weight: 400;
+      font-size: 13px;
+      margin: 0 6px;
+    }
+
+    .badge {
+      padding: 3px 10px;
+      border-radius: 20px;
+      font-size: 12px;
+      font-weight: 600;
+    }
+
+    .badge.alert { background: var(--red); color: #fff; }
+    .badge.ok { background: #1f3a1f; color: var(--green); border: 1px solid var(--green); }
+    .badge.no-data { background: #1c2128; color: var(--muted); border: 1px solid var(--border); }
+
+    .match-body { padding: 14px 16px; }
+
+    .alert-reason {
+      background: var(--alert-bg);
+      border: 1px solid var(--alert-border);
+      border-radius: 6px;
+      padding: 10px 12px;
+      font-size: 13px;
+      color: var(--red);
+      margin-bottom: 12px;
+      line-height: 1.5;
+    }
+
+    .alert-reason::before { content: "⚠️ "; }
+
+    .max-change {
+      font-size: 13px;
+      color: var(--muted);
+      margin-bottom: 10px;
+    }
+
+    .max-change .change-value {
+      font-weight: 700;
+      font-size: 15px;
+    }
+
+    .change-value.high { color: var(--red); }
+    .change-value.mid { color: var(--yellow); }
+    .change-value.low { color: var(--green); }
+
+    /* ── Odds Table ── */
+    .odds-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 13px;
+    }
+
+    .odds-table th {
+      text-align: center;
+      padding: 6px 8px;
+      color: var(--muted);
+      font-weight: 500;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .odds-table td {
+      text-align: center;
+      padding: 5px 8px;
+      border-bottom: 1px solid #21262d;
+    }
+
+    .odds-table tr:last-child td { border-bottom: none; }
+
+    .odds-table .home-odds { color: var(--orange); font-weight: 600; }
+    .odds-table .away-odds { color: var(--blue); font-weight: 600; }
+    .odds-table .handicap { color: var(--muted); }
+    .odds-table .time-col { color: var(--muted); font-size: 12px; }
+
+    .no-records {
+      text-align: center;
+      color: var(--muted);
+      font-size: 13px;
+      padding: 16px;
+    }
+
+    .match-footer {
+      padding: 8px 16px;
+      border-top: 1px solid var(--border);
+      font-size: 12px;
+      color: var(--muted);
+      display: flex;
+      justify-content: space-between;
+    }
+
+    /* ── Empty State ── */
+    .empty-state {
+      text-align: center;
+      padding: 80px 20px;
+      color: var(--muted);
+    }
+
+    .empty-state .icon { font-size: 64px; margin-bottom: 16px; }
+    .empty-state h3 { font-size: 20px; margin-bottom: 8px; color: var(--text); }
+
+    /* ── Loading ── */
+    .loading-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(13, 17, 23, 0.8);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 999;
+      display: none;
+    }
+
+    .loading-overlay.show { display: flex; }
+
+    .spinner {
+      width: 48px; height: 48px;
+      border: 4px solid var(--border);
+      border-top-color: var(--blue);
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+    }
+
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* ── Alert Toast ── */
+    .toast-container {
+      position: fixed;
+      top: 80px;
+      right: 20px;
+      z-index: 200;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .toast {
+      background: var(--alert-bg);
+      border: 1px solid var(--red);
+      border-radius: 8px;
+      padding: 12px 16px;
+      max-width: 360px;
+      font-size: 14px;
+      animation: slideIn 0.3s ease;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.4);
+    }
+
+    .toast .toast-title { font-weight: 700; color: var(--red); margin-bottom: 4px; }
+    .toast .toast-body { color: var(--text); font-size: 13px; }
+
+    @keyframes slideIn {
+      from { transform: translateX(100%); opacity: 0; }
+      to { transform: translateX(0); opacity: 1; }
+    }
+
+    /* ── Countdown ── */
+    #countdown { font-weight: 600; color: var(--blue); }
+
+    /* ── Responsive ── */
+    @media (max-width: 600px) {
+      .matches-grid { grid-template-columns: 1fr; }
+      header { flex-direction: column; gap: 10px; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- Header -->
+<header>
+  <div class="logo">⚽ Soccer<span>Burst</span></div>
+  <div class="header-right">
+    <span style="font-size:13px;color:var(--muted)">下次扫描：<span id="countdown">--</span></span>
+    <button class="btn primary" id="scanBtn" onclick="triggerScan()">🔍 立即扫描</button>
+  </div>
+</header>
+
+<!-- Status Bar -->
+<div class="status-bar">
+  <div class="status-item">
+    <div class="dot" id="statusDot"></div>
+    <span id="statusText">初始化中...</span>
+  </div>
+  <div class="status-item">📅 最后更新：<span id="lastUpdated">--</span></div>
+  <div class="status-item">🔄 扫描次数：<span id="scanCount">0</span></div>
+  <div class="status-item" id="errorItem" style="display:none;color:var(--red)">❌ <span id="errorText"></span></div>
+</div>
+
+<!-- Main -->
+<main>
+  <!-- Summary -->
+  <div class="summary">
+    <div class="summary-card">
+      <div class="value" id="totalMatches">0</div>
+      <div class="label">今日比赛</div>
+    </div>
+    <div class="summary-card alert-card">
+      <div class="value" id="alertCount">0</div>
+      <div class="label">⚠️ 报警比赛</div>
+    </div>
+    <div class="summary-card">
+      <div class="value" id="noDataCount" style="color:var(--muted)">0</div>
+      <div class="label">暂无数据</div>
+    </div>
+    <div class="summary-card">
+      <div class="value" id="maxChangeDisplay" style="color:var(--orange)">0.00</div>
+      <div class="label">最大赔率变化</div>
+    </div>
+  </div>
+
+  <!-- Toolbar -->
+  <div class="toolbar">
+    <div class="filter-tabs">
+      <button class="filter-tab active" onclick="setFilter('all', this)">全部</button>
+      <button class="filter-tab" onclick="setFilter('alert', this)">⚠️ 仅报警</button>
+      <button class="filter-tab" onclick="setFilter('normal', this)">正常</button>
+    </div>
+    <span style="font-size:13px;color:var(--muted);margin-left:auto">
+      数据来源：titan007.com Crow* 亚让赔率 | 报警阈值：同盘口赔率变化 ≥ 0.10
+    </span>
+  </div>
+
+  <!-- Matches -->
+  <div class="matches-grid" id="matchesGrid">
+    <div class="empty-state" style="grid-column:1/-1">
+      <div class="icon">⏳</div>
+      <h3>等待首次扫描...</h3>
+      <p>系统启动后将自动开始扫描，或点击"立即扫描"手动触发</p>
+    </div>
+  </div>
+</main>
+
+<!-- Toast Container -->
+<div class="toast-container" id="toastContainer"></div>
+
+<!-- Loading Overlay -->
+<div class="loading-overlay" id="loadingOverlay">
+  <div style="text-align:center">
+    <div class="spinner"></div>
+    <p style="margin-top:16px;color:var(--muted)">正在扫描盘口数据...</p>
+  </div>
+</div>
+
+<script>
+  let currentFilter = 'all';
+  let allMatches = [];
+  let prevAlertIds = new Set();
+  let nextScanTime = null;
+  let countdownTimer = null;
+
+  // ── 数据加载 ──
+  async function loadData() {
+    try {
+      const res = await fetch('/api/data');
+      const json = await res.json();
+      updateUI(json);
+    } catch (e) {
+      console.error('加载数据失败:', e);
+    }
+  }
+
+  function updateUI(json) {
+    const matches = json.matches || [];
+    const status = json.scan_status || {};
+
+    allMatches = matches;
+
+    // 更新状态栏
+    const dot = document.getElementById('statusDot');
+    const statusText = document.getElementById('statusText');
+
+    if (status.is_scanning) {
+      dot.className = 'dot scanning';
+      statusText.textContent = '正在扫描中...';
+      document.getElementById('loadingOverlay').classList.add('show');
+    } else {
+      document.getElementById('loadingOverlay').classList.remove('show');
+      if (status.error) {
+        dot.className = 'dot error';
+        statusText.textContent = '扫描出错';
+        document.getElementById('errorItem').style.display = 'flex';
+        document.getElementById('errorText').textContent = status.error;
+      } else {
+        dot.className = 'dot ok';
+        statusText.textContent = '运行正常';
+        document.getElementById('errorItem').style.display = 'none';
+      }
+    }
+
+    document.getElementById('lastUpdated').textContent = json.last_updated || '--';
+    document.getElementById('scanCount').textContent = status.scan_count || 0;
+
+    // 更新倒计时
+    if (status.next_scan) {
+      nextScanTime = new Date(status.next_scan.replace(' ', 'T'));
+      startCountdown();
+    }
+
+    // 统计
+    const alertMatches = matches.filter(m => m.alert);
+    const noDataMatches = matches.filter(m => !m.ji_records || m.ji_records.length === 0);
+    const maxChange = matches.reduce((max, m) => Math.max(max, m.max_change || 0), 0);
+
+    document.getElementById('totalMatches').textContent = matches.length;
+    document.getElementById('alertCount').textContent = alertMatches.length;
+    document.getElementById('noDataCount').textContent = noDataMatches.length;
+    document.getElementById('maxChangeDisplay').textContent = maxChange.toFixed(2);
+
+    // 检查新报警
+    const newAlerts = alertMatches.filter(m => !prevAlertIds.has(m.match_id));
+    newAlerts.forEach(m => showAlertToast(m));
+    prevAlertIds = new Set(alertMatches.map(m => m.match_id));
+
+    // 渲染比赛卡片
+    renderMatches();
+  }
+
+  function renderMatches() {
+    const grid = document.getElementById('matchesGrid');
+
+    let filtered = allMatches;
+    if (currentFilter === 'alert') filtered = allMatches.filter(m => m.alert);
+    if (currentFilter === 'normal') filtered = allMatches.filter(m => !m.alert);
+
+    // 报警的排在前面
+    filtered.sort((a, b) => {
+      if (a.alert && !b.alert) return -1;
+      if (!a.alert && b.alert) return 1;
+      return (b.max_change || 0) - (a.max_change || 0);
+    });
+
+    if (filtered.length === 0) {
+      grid.innerHTML = `
+        <div class="empty-state" style="grid-column:1/-1">
+          <div class="icon">${currentFilter === 'alert' ? '✅' : '📭'}</div>
+          <h3>${currentFilter === 'alert' ? '暂无报警比赛' : '暂无数据'}</h3>
+          <p>${currentFilter === 'alert' ? '当前没有赔率变化超过0.10的比赛' : '请等待扫描完成或手动触发扫描'}</p>
+        </div>`;
+      return;
+    }
+
+    grid.innerHTML = filtered.map(m => renderMatchCard(m)).join('');
+  }
+
+  function renderMatchCard(m) {
+    const isAlert = m.alert;
+    const records = m.ji_records || [];
+    const hasData = records.length > 0;
+
+    const badgeHtml = isAlert
+      ? `<span class="badge alert">⚠️ 报警</span>`
+      : hasData
+        ? `<span class="badge ok">✓ 正常</span>`
+        : `<span class="badge no-data">无数据</span>`;
+
+    const alertHtml = isAlert
+      ? `<div class="alert-reason">${m.alert_reason}</div>`
+      : '';
+
+    const changeClass = (m.max_change || 0) >= 0.10 ? 'high'
+                      : (m.max_change || 0) >= 0.05 ? 'mid' : 'low';
+
+    const changeHtml = hasData
+      ? `<div class="max-change">最大变化幅度：<span class="change-value ${changeClass}">${(m.max_change || 0).toFixed(3)}</span></div>`
+      : '';
+
+    const tableHtml = hasData
+      ? `<table class="odds-table">
+          <thead>
+            <tr>
+              <th>主队赔率</th>
+              <th>盘口</th>
+              <th>客队赔率</th>
+              <th>时间</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${records.slice(0, 8).map(r => `
+              <tr>
+                <td class="home-odds">${r.home_odds.toFixed(2)}</td>
+                <td class="handicap">${r.handicap || '-'}</td>
+                <td class="away-odds">${r.away_odds.toFixed(2)}</td>
+                <td class="time-col">${r.time || '-'}</td>
+              </tr>
+            `).join('')}
+          </tbody>
+        </table>`
+      : `<div class="no-records">暂无"即"标记赔率记录</div>`;
+
+    return `
+      <div class="match-card ${isAlert ? 'alert' : ''}">
+        <div class="match-header">
+          <div class="match-teams">
+            ${m.home || '主队'} <span class="vs">VS</span> ${m.away || '客队'}
+          </div>
+          ${badgeHtml}
+        </div>
+        <div class="match-body">
+          ${alertHtml}
+          ${changeHtml}
+          ${tableHtml}
+        </div>
+        <div class="match-footer">
+          <span>比赛ID: ${m.match_id}</span>
+          <span>${m.scraped_at || ''}</span>
+        </div>
+      </div>`;
+  }
+
+  // ── 过滤 ──
+  function setFilter(filter, el) {
+    currentFilter = filter;
+    document.querySelectorAll('.filter-tab').forEach(t => t.classList.remove('active'));
+    el.classList.add('active');
+    renderMatches();
+  }
+
+  // ── 手动扫描 ──
+  async function triggerScan() {
+    const btn = document.getElementById('scanBtn');
+    btn.disabled = true;
+    btn.textContent = '⏳ 扫描中...';
+
+    try {
+      const res = await fetch('/api/scan', { method: 'POST' });
+      const json = await res.json();
+      if (!json.success) {
+        alert(json.message);
+      }
+    } catch (e) {
+      alert('触发扫描失败: ' + e.message);
+    }
+
+    setTimeout(() => {
+      btn.disabled = false;
+      btn.innerHTML = '🔍 立即扫描';
+    }, 3000);
+  }
+
+  // ── 报警 Toast ──
+  function showAlertToast(match) {
+    const container = document.getElementById('toastContainer');
+    const toast = document.createElement('div');
+    toast.className = 'toast';
+    toast.innerHTML = `
+      <div class="toast-title">⚠️ 盘口报警！</div>
+      <div class="toast-body">
+        <strong>${match.home} vs ${match.away}</strong><br>
+        ${match.alert_reason}
+      </div>`;
+    container.appendChild(toast);
+
+    // 播放提示音（如果浏览器支持）
+    try {
+      const ctx = new AudioContext();
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.frequency.value = 880;
+      gain.gain.setValueAtTime(0.3, ctx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.5);
+      osc.start(ctx.currentTime);
+      osc.stop(ctx.currentTime + 0.5);
+    } catch (e) {}
+
+    setTimeout(() => toast.remove(), 8000);
+  }
+
+  // ── 倒计时 ──
+  function startCountdown() {
+    if (countdownTimer) clearInterval(countdownTimer);
+    countdownTimer = setInterval(() => {
+      if (!nextScanTime) return;
+      const diff = Math.max(0, Math.floor((nextScanTime - Date.now()) / 1000));
+      const m = Math.floor(diff / 60);
+      const s = diff % 60;
+      document.getElementById('countdown').textContent =
+        `${m}:${s.toString().padStart(2, '0')}`;
+    }, 1000);
+  }
+
+  // ── SSE 实时更新 ──
+  function connectSSE() {
+    const es = new EventSource('/api/stream');
+    es.onmessage = (e) => {
+      try {
+        const payload = JSON.parse(e.data);
+        updateUI({ ...payload.data, scan_status: payload.status });
+      } catch (err) {
+        console.error('SSE 解析失败:', err);
+      }
+    };
+    es.onerror = () => {
+      console.warn('SSE 断开，5秒后重连...');
+      es.close();
+      setTimeout(connectSSE, 5000);
+    };
+  }
+
+  // ── 初始化 ──
+  loadData();
+  connectSSE();
+
+  // 每30秒轮询一次（作为 SSE 的备份）
+  setInterval(loadData, 30000);
+</script>
+</body>
+</html>
