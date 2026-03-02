@@ -23,7 +23,6 @@ RUN playwright install-deps chromium
 # 复制项目文件
 COPY app.py scraper.py ./
 COPY templates/ templates/
-COPY static/ static/
 
 EXPOSE 5000
 
