@@ -115,12 +115,29 @@ async def fetch_sporttery_today_matches(page) -> list[dict]:
                 "weight": weight,
             })
 
-        logger.info(f"解析到 {len(matches)} 场竞彩比赛")
+        logger.info(f"解析到 {len(matches)} 场竞彩比赛（含今明两天）")
 
     except Exception as e:
         logger.error(f"获取 sporttery 比赛列表失败: {e}")
 
-    return matches
+    # 只返回今天的比赛（过滤掉明天的）
+    # sporttery 页面同时显示今天和明天的比赛
+    # 今天的比赛编号格式：周X 260303，明天的：周X 260304
+    # 通过比赛编号前缀来区分：今天的编号 <= 今天日期对应的最大编号
+    # 简单方法：取今天日期，只保留 match_time 中日期 <= 今天的比赛
+    today = datetime.now()
+    today_str = today.strftime("%m-%d")  # 如 "03-03"
+
+    today_matches = []
+    for m in matches:
+        mt = m.get("match_time", "")
+        # match_time 格式如 "03-03\n04:00" 或 "03-03 04:00"
+        date_part = mt.split("\n")[0].split(" ")[0].strip()  # 取 "03-03"
+        if date_part == today_str:
+            today_matches.append(m)
+
+    logger.info(f"今天({today_str})的比赛：{len(today_matches)} 场")
+    return today_matches
 
 
 # ─────────────────────────────────────────────
