@@ -30,7 +30,7 @@ logging.basicConfig(level=logging.INFO, format='%(asctime)s %(levelname)s %(mess
 logger = logging.getLogger(__name__)
 
 CROW_COMPANY_ID = 3  # Crow* 的 companyID
-TOP_N_MATCHES = 3    # 只扫描前N场（按联赛权重）
+TOP_N_MATCHES = 10   # 扫描前N场（按联赛权重），设大一点确保不遗漏
 
 # 联赛权重（用于代替 Betfair matched value 排序）
 LEAGUE_WEIGHTS = {
