@@ -279,6 +279,24 @@
     .odds-table .handicap { color: var(--muted); }
     .odds-table .time-col { color: var(--muted); font-size: 12px; }
 
+    /* 40分钟窗口内的记录高亮 */
+    .odds-table tr.in-window {
+      background: rgba(88, 166, 255, 0.08);
+      border-left: 2px solid var(--blue);
+    }
+    .odds-table tr.in-window td { border-bottom-color: rgba(88, 166, 255, 0.15); }
+    .window-label {
+      display: inline-block;
+      font-size: 11px;
+      color: var(--blue);
+      background: rgba(88, 166, 255, 0.12);
+      border: 1px solid rgba(88, 166, 255, 0.3);
+      border-radius: 3px;
+      padding: 1px 5px;
+      margin-left: 4px;
+      vertical-align: middle;
+    }
+
     .no-records {
       text-align: center;
       color: var(--muted);
@@ -362,6 +380,153 @@
     /* ── Countdown ── */
     #countdown { font-weight: 600; color: var(--blue); }
 
+    /* ── bet365 History Section ── */
+    .history-section {
+      margin-top: 40px;
+      padding-top: 24px;
+      border-top: 2px solid var(--border);
+    }
+
+    .history-section h2 {
+      font-size: 18px;
+      font-weight: 700;
+      margin-bottom: 16px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .history-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      margin-bottom: 16px;
+      overflow: hidden;
+    }
+
+    .history-card.settled {
+      border-color: var(--green);
+    }
+
+    .history-header {
+      padding: 12px 16px;
+      background: #1c2128;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .history-title {
+      font-size: 15px;
+      font-weight: 600;
+    }
+
+    .history-meta {
+      font-size: 12px;
+      color: var(--muted);
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+
+    .history-body {
+      padding: 14px 16px;
+    }
+
+    .history-body .bet365-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 13px;
+      margin-bottom: 12px;
+    }
+
+    .bet365-table th {
+      text-align: center;
+      padding: 6px 8px;
+      color: var(--muted);
+      font-weight: 500;
+      border-bottom: 1px solid var(--border);
+      background: #1c2128;
+    }
+
+    .bet365-table td {
+      text-align: center;
+      padding: 5px 8px;
+      border-bottom: 1px solid #21262d;
+    }
+
+    .bet365-table tr:last-child td { border-bottom: none; }
+    .bet365-table .home-hc { color: var(--orange); font-weight: 600; }
+    .bet365-table .away-hc { color: var(--blue); font-weight: 600; }
+    .bet365-table tr.winner-home { background: rgba(63, 185, 80, 0.12); }
+    .bet365-table tr.winner-away { background: rgba(88, 166, 255, 0.12); }
+    .bet365-table tr.winner-push { background: rgba(210, 153, 34, 0.12); }
+    .bet365-table .win-badge {
+      display: inline-block;
+      font-size: 11px;
+      padding: 1px 6px;
+      border-radius: 3px;
+      font-weight: 600;
+    }
+    .win-badge.home { background: rgba(63,185,80,0.2); color: var(--green); border: 1px solid var(--green); }
+    .win-badge.away { background: rgba(88,166,255,0.2); color: var(--blue); border: 1px solid var(--blue); }
+    .win-badge.push { background: rgba(210,153,34,0.2); color: var(--yellow); border: 1px solid var(--yellow); }
+
+    .result-form {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+      margin-top: 10px;
+      padding-top: 10px;
+      border-top: 1px solid var(--border);
+    }
+
+    .result-form label { font-size: 13px; color: var(--muted); }
+
+    .result-form input[type="number"] {
+      width: 60px;
+      padding: 5px 8px;
+      background: #21262d;
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      color: var(--text);
+      font-size: 14px;
+      text-align: center;
+    }
+
+    .result-form .score-sep {
+      font-size: 18px;
+      font-weight: 700;
+      color: var(--muted);
+    }
+
+    .result-settled {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 14px;
+      margin-top: 10px;
+      padding-top: 10px;
+      border-top: 1px solid var(--border);
+    }
+
+    .result-score {
+      font-size: 20px;
+      font-weight: 700;
+      color: var(--green);
+    }
+
+    .no-bet365 {
+      text-align: center;
+      color: var(--muted);
+      font-size: 13px;
+      padding: 12px;
+      font-style: italic;
+    }
+
     /* ── Responsive ── */
     @media (max-width: 600px) {
       .matches-grid { grid-template-columns: 1fr; }
@@ -431,6 +596,18 @@
       <div class="icon">⏳</div>
       <h3>等待首次扫描...</h3>
       <p>系统启动后将自动开始扫描，或点击"立即扫描"手动触发</p>
+    </div>
+  </div>
+
+  <!-- bet365 历史记录 -->
+  <div class="history-section">
+    <h2>📊 bet365 热度第一名 · Alternative Asian Handicap 历史记录</h2>
+    <div id="historyContainer">
+      <div class="empty-state" style="padding:40px 20px">
+        <div class="icon" style="font-size:40px">📋</div>
+        <h3>暂无历史记录</h3>
+        <p>每次扫描后，热度第一名的 bet365 赔率将自动记录在此</p>
+      </div>
     </div>
   </div>
 </main>
@@ -551,6 +728,16 @@
     const isAlert = m.alert;
     const records = m.ji_records || [];
     const hasData = records.length > 0;
+    const rank = m.rank || 0;
+
+    // 热度排名徽章
+    const rankBadge = rank === 1
+      ? `<span style="background:#d29922;color:#000;font-size:11px;font-weight:700;padding:2px 7px;border-radius:10px;margin-right:6px">🔥 热度#1</span>`
+      : rank === 2
+        ? `<span style="background:#8b949e;color:#000;font-size:11px;font-weight:700;padding:2px 7px;border-radius:10px;margin-right:6px">🥈 热度#2</span>`
+        : rank === 3
+          ? `<span style="background:#cd7f32;color:#000;font-size:11px;font-weight:700;padding:2px 7px;border-radius:10px;margin-right:6px">🥉 热度#3</span>`
+          : '';
 
     const badgeHtml = isAlert
       ? `<span class="badge alert">⚠️ 报警</span>`
@@ -569,6 +756,12 @@
       ? `<div class="max-change">最大变化幅度：<span class="change-value ${changeClass}">${(m.max_change || 0).toFixed(3)}</span></div>`
       : '';
 
+    // 窗口内记录数量（用于显示标签）
+    const windowCount = records.filter(r => r.in_window).length;
+    const windowLabel = windowCount > 0
+      ? `<span class="window-label">⏱ 40分钟窗口: ${windowCount}条</span>`
+      : '';
+
     const tableHtml = hasData
       ? `<table class="odds-table">
           <thead>
@@ -580,8 +773,8 @@
             </tr>
           </thead>
           <tbody>
-            ${records.slice(0, 8).map(r => `
-              <tr>
+            ${records.slice(0, 10).map(r => `
+              <tr class="${r.in_window ? 'in-window' : ''}">
                 <td class="home-odds">${r.home_odds.toFixed(2)}</td>
                 <td class="handicap">${r.handicap || '-'}</td>
                 <td class="away-odds">${r.away_odds.toFixed(2)}</td>
@@ -596,7 +789,7 @@
       <div class="match-card ${isAlert ? 'alert' : ''}">
         <div class="match-header">
           <div class="match-teams">
-            ${m.home || '主队'} <span class="vs">VS</span> ${m.away || '客队'}
+            ${rankBadge}${m.home || '主队'} <span class="vs">VS</span> ${m.away || '客队'}
           </div>
           ${badgeHtml}
         </div>
@@ -606,7 +799,7 @@
           ${tableHtml}
         </div>
         <div class="match-footer">
-          <span>比赛ID: ${m.match_id}</span>
+          <span>比赛ID: ${m.match_id} | 🔥 热度: ${m.crow_record_count ?? 0}条 × ${m.time_weight ?? 1}x = ${m.heat_score ?? m.crow_record_count ?? 0}</span>
           <span>${m.scraped_at || ''}</span>
         </div>
       </div>`;
@@ -685,6 +878,159 @@
     }, 1000);
   }
 
+  // ── bet365 历史记录 ──
+  async function loadHistory() {
+    try {
+      const res = await fetch('/api/history');
+      const json = await res.json();
+      renderHistory(json.history || []);
+    } catch (e) {
+      console.error('加载历史记录失败:', e);
+    }
+  }
+
+  function renderHistory(history) {
+    const container = document.getElementById('historyContainer');
+    if (!history.length) {
+      container.innerHTML = `
+        <div class="empty-state" style="padding:40px 20px">
+          <div class="icon" style="font-size:40px">📋</div>
+          <h3>暂无历史记录</h3>
+          <p>每次扫描后，热度第一名的 bet365 赔率将自动记录在此</p>
+        </div>`;
+      return;
+    }
+
+    container.innerHTML = history.map(h => renderHistoryCard(h)).join('');
+  }
+
+  function renderHistoryCard(h) {
+    const settled = h.result && h.result.settled;
+    const handicaps = h.handicaps || [];
+    const winningKeys = new Set(
+      (h.result && h.result.winning_handicaps || []).map(w => w.home_handicap)
+    );
+
+    const tableRows = handicaps.length > 0
+      ? handicaps.map(hc => {
+          const isWinner = winningKeys.has(hc.home_handicap);
+          const winInfo = settled
+            ? (h.result.winning_handicaps || []).find(w => w.home_handicap === hc.home_handicap)
+            : null;
+          const rowClass = winInfo
+            ? (winInfo.winner === 'home' ? 'winner-home' : winInfo.winner === 'away' ? 'winner-away' : 'winner-push')
+            : '';
+          const badge = winInfo
+            ? `<span class="win-badge ${winInfo.winner}">${winInfo.result}</span>`
+            : '';
+          return `<tr class="${rowClass}">
+            <td class="home-hc">${hc.home_handicap || '-'}</td>
+            <td>${hc.home_odds ? hc.home_odds.toFixed(3) : '-'}</td>
+            <td class="away-hc">${hc.away_handicap || '-'}</td>
+            <td>${hc.away_odds ? hc.away_odds.toFixed(3) : '-'}</td>
+            <td>${badge}</td>
+          </tr>`;
+        }).join('')
+      : `<tr><td colspan="5" class="no-bet365">${h.error || '未能抓取到赔率数据'}</td></tr>`;
+
+    const resultHtml = settled
+      ? `<div class="result-settled">
+          <span>比赛结果：</span>
+          <span class="result-score">${h.result.home_score} : ${h.result.away_score}</span>
+          <span style="color:var(--muted);font-size:13px">（${h.home} vs ${h.away}）</span>
+          <span style="color:var(--green);font-size:13px">✅ 已结算 · ${(h.result.winning_handicaps||[]).length} 个盘口胜出</span>
+        </div>`
+      : `<div class="result-form">
+          <label>输入比赛结果：</label>
+          <input type="number" id="hs_${h.match_key}" placeholder="主" min="0" max="20" style="width:55px">
+          <span class="score-sep">:</span>
+          <input type="number" id="as_${h.match_key}" placeholder="客" min="0" max="20" style="width:55px">
+          <button class="btn" onclick="submitResult('${h.match_key}', '${h.home}', '${h.away}')">✅ 确认结果</button>
+        </div>`;
+
+    const bet365Link = h.url
+      ? `<a href="${h.url}" target="_blank" style="color:var(--blue);font-size:12px;text-decoration:none">🔗 bet365链接</a>`
+      : `<span style="color:var(--muted);font-size:12px">暂无链接</span>`;
+
+    // bet365 链接输入框（未结算且无赔率数据时显示）
+    const urlInputHtml = !settled && handicaps.length === 0
+      ? `<div style="display:flex;align-items:center;gap:8px;margin-top:10px;padding-top:10px;border-top:1px solid var(--border);flex-wrap:wrap">
+          <label style="font-size:13px;color:var(--muted)">🔗 输入 bet365 比赛链接：</label>
+          <input type="text" id="url_${h.match_key}"
+            placeholder="https://www.bet365.com.au/#/AC/B1/C1/D8/E.../F3/I3/"
+            value="${h.bet365_url || ''}"
+            style="flex:1;min-width:200px;padding:5px 8px;background:#21262d;border:1px solid var(--border);border-radius:4px;color:var(--text);font-size:12px">
+          <button class="btn" onclick="saveBet365Url('${h.match_key}')">💾 保存链接</button>
+          <button class="btn primary" onclick="fetchBet365Now('${h.match_key}', '${h.home}', '${h.away}')">⚡ 立即抓取</button>
+        </div>`
+      : '';
+
+    return `
+      <div class="history-card ${settled ? 'settled' : ''}">
+        <div class="history-header">
+          <div>
+            <div class="history-title">
+              ${settled ? '✅' : '🔥'} #1 热度 · ${h.league || ''} · ${h.home} vs ${h.away}
+            </div>
+            <div class="history-meta">
+              <span>📅 ${h.date || ''}</span>
+              <span>⏰ ${h.match_time || ''}</span>
+              <span>🔥 热度分: ${h.heat_score || 0} (${h.crow_record_count || 0}条 × ${h.time_weight || 1}x)</span>
+              <span>🕐 抓取: ${h.scraped_at || ''}</span>
+              ${bet365Link}
+            </div>
+          </div>
+          ${settled ? '<span class="badge ok">已结算</span>' : '<span class="badge no-data">待结算</span>'}
+        </div>
+        <div class="history-body">
+          ${handicaps.length > 0 ? `
+          <table class="bet365-table">
+            <thead>
+              <tr>
+                <th>${h.home || '主队'} 盘口</th>
+                <th>${h.home || '主队'} 赔率</th>
+                <th>${h.away || '客队'} 盘口</th>
+                <th>${h.away || '客队'} 赔率</th>
+                <th>结果</th>
+              </tr>
+            </thead>
+            <tbody>${tableRows}</tbody>
+          </table>` : `<div class="no-bet365">${h.error || '未能抓取到赔率数据'}</div>`}
+          ${urlInputHtml}
+          ${resultHtml}
+        </div>
+      </div>`;
+  }
+
+  async function submitResult(matchKey, home, away) {
+    const hsEl = document.getElementById(`hs_${matchKey}`);
+    const asEl = document.getElementById(`as_${matchKey}`);
+    const hs = parseInt(hsEl ? hsEl.value : '');
+    const as_ = parseInt(asEl ? asEl.value : '');
+
+    if (isNaN(hs) || isNaN(as_)) {
+      alert('请输入有效的比分（主队和客队进球数）');
+      return;
+    }
+
+    try {
+      const res = await fetch('/api/result', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ match_key: matchKey, home_score: hs, away_score: as_ })
+      });
+      const json = await res.json();
+      if (json.success) {
+        alert(`✅ 结果已更新！${home} ${hs}:${as_} ${away}\n胜出盘口数：${json.winning_handicaps ? json.winning_handicaps.length : 0}`);
+        loadHistory();
+      } else {
+        alert('更新失败：' + json.message);
+      }
+    } catch (e) {
+      alert('请求失败：' + e.message);
+    }
+  }
+
   // ── SSE 实时更新 ──
   function connectSSE() {
     const es = new EventSource('/api/stream');
@@ -703,12 +1049,70 @@
     };
   }
 
+  // ── 保存 bet365 链接 ──
+  async function saveBet365Url(matchKey) {
+    const input = document.getElementById(`url_${matchKey}`);
+    const url = input ? input.value.trim() : '';
+    if (!url) { alert('请输入 bet365 链接'); return; }
+
+    try {
+      const res = await fetch('/api/history/set_url', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ match_key: matchKey, bet365_url: url })
+      });
+      const json = await res.json();
+      if (json.success) {
+        alert('✅ 链接已保存！下次扫描时将自动抓取赔率。');
+        loadHistory();
+      } else {
+        alert('保存失败：' + json.message);
+      }
+    } catch (e) {
+      alert('请求失败：' + e.message);
+    }
+  }
+
+  // ── 立即抓取 bet365 赔率 ──
+  async function fetchBet365Now(matchKey, home, away) {
+    const input = document.getElementById(`url_${matchKey}`);
+    const url = input ? input.value.trim() : '';
+    if (!url) { alert('请先输入 bet365 比赛链接'); return; }
+
+    const btn = event.target;
+    btn.disabled = true;
+    btn.textContent = '⏳ 抓取中...';
+
+    try {
+      const res = await fetch('/api/history/fetch_now', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ match_key: matchKey, home, away, bet365_url: url })
+      });
+      const json = await res.json();
+      if (json.success) {
+        alert(`✅ 抓取成功！获取到 ${json.handicap_count} 个盘口赔率`);
+        loadHistory();
+      } else {
+        alert('抓取失败：' + json.message);
+      }
+    } catch (e) {
+      alert('请求失败：' + e.message);
+    } finally {
+      btn.disabled = false;
+      btn.textContent = '⚡ 立即抓取';
+    }
+  }
+
   // ── 初始化 ──
   loadData();
   connectSSE();
+  loadHistory();
 
   // 每30秒轮询一次（作为 SSE 的备份）
   setInterval(loadData, 30000);
+  // 每2分钟刷新历史记录
+  setInterval(loadHistory, 120000);
 </script>
 </body>
 </html>

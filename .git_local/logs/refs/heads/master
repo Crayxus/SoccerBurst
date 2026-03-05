@@ -1,0 +1,2 @@
+0000000000000000000000000000000000000000 1bf926be3683fa1011d46c22ef92b5c44901b55f Crayxus <crayxus@github.com> 1772646267 +0800	commit (initial): fix: 修复bet365赔率解析，支持分数赔率转欧赔，修复API监听逻辑
+1bf926be3683fa1011d46c22ef92b5c44901b55f 7ecec6e099a1a06244e9a5ddc3665cdff81e52ad Crayxus <crayxus@github.com> 1772649359 +0800	commit: feat: 比赛卡片显示热度排名徽章（#1/#2/#3）

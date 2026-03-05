@@ -1,2 +1,5 @@
 flask>=3.0.0
 playwright>=1.40.0
+# DrissionPage 用于本地抓取 bet365（绕过反爬，仅本地运行需要）
+# 云端 Render 不需要此依赖
+# pip install DrissionPage

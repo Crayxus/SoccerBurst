@@ -39,6 +39,53 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from scraper import scan_all_matches, save_results
 
 
+def push_bet365_history_to_cloud() -> bool:
+    """将本地 bet365 历史记录推送到 Render 云端"""
+    history_file = os.path.join(os.path.dirname(os.path.abspath(__file__)), "bet365_history.json")
+    if not os.path.exists(history_file):
+        logger.info("bet365 历史记录文件不存在，跳过推送")
+        return True
+
+    try:
+        with open(history_file, "r", encoding="utf-8") as f:
+            history = json.load(f)
+    except Exception as e:
+        logger.error(f"读取 bet365 历史记录失败: {e}")
+        return False
+
+    url = f"{RENDER_URL.rstrip('/')}/api/history/push"
+    payload = json.dumps(history, ensure_ascii=False).encode("utf-8")
+
+    req = urllib.request.Request(
+        url,
+        data=payload,
+        headers={
+            "Content-Type": "application/json; charset=utf-8",
+            "X-Push-Secret": PUSH_SECRET,
+        },
+        method="POST"
+    )
+
+    try:
+        with urllib.request.urlopen(req, timeout=30) as resp:
+            result = json.loads(resp.read().decode("utf-8"))
+            if result.get("success"):
+                logger.info(f"✅ bet365 历史记录推送成功：{len(history)} 条")
+                return True
+            else:
+                logger.error(f"❌ bet365 历史推送失败：{result.get('message')}")
+                return False
+    except urllib.error.HTTPError as e:
+        logger.error(f"❌ bet365 历史推送 HTTP错误 {e.code}: {e.reason}")
+        return False
+    except urllib.error.URLError as e:
+        logger.error(f"❌ bet365 历史推送网络错误: {e.reason}")
+        return False
+    except Exception as e:
+        logger.error(f"❌ bet365 历史推送异常: {e}")
+        return False
+
+
 def push_data_to_cloud(data: dict) -> bool:
     """将扫描数据推送到 Render 云端"""
     url = f"{RENDER_URL.rstrip('/')}/api/push"
@@ -86,12 +133,41 @@ async def scan_and_push():
         save_results(results)
 
         # 构建推送数据
+        # 加载本地已有数据进行合并
+        data_file = os.path.join(os.path.dirname(os.path.abspath(__file__)), "data.json")
+        existing_data = {}
+        if os.path.exists(data_file):
+            try:
+                with open(data_file, "r", encoding="utf-8") as f:
+                    old_data = json.load(f)
+                    for m in old_data.get("matches", []):
+                        if "match_id" in m:
+                            existing_data[m["match_id"]] = m
+            except Exception as e:
+                logger.error(f"合并历史数据失败: {e}")
+
+        # 合并新数据
+        for r in results:
+            if "match_id" in r:
+                existing_data[r["match_id"]] = r
+
+        final_matches = list(existing_data.values())
+        final_matches.sort(key=lambda x: x.get("heat_score", 0), reverse=True)
+        final_matches = final_matches[:50]  # 保留最多50场记录
+
         data = {
             "last_updated": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-            "total_matches": len(results),
-            "alert_count": sum(1 for r in results if r.get("alert")),
-            "matches": results
+            "total_matches": len(final_matches),
+            "alert_count": sum(1 for r in final_matches if r.get("alert")),
+            "matches": final_matches
         }
+
+        # 同时更新本地的 data.json 保持同步
+        try:
+            with open(data_file, "w", encoding="utf-8") as f:
+                json.dump(data, f, ensure_ascii=False, indent=2)
+        except Exception as e:
+            logger.error(f"保存本地合并数据失败: {e}")
 
         alerts = [r for r in results if r.get("alert")]
         logger.info(f"扫描完成：{len(results)} 场比赛，{len(alerts)} 场报警")
@@ -103,6 +179,9 @@ async def scan_and_push():
         # 推送到云端
         logger.info(f"推送数据到 {RENDER_URL}...")
         push_data_to_cloud(data)
+
+        # 同步推送 bet365 历史记录到云端
+        push_bet365_history_to_cloud()
 
     except Exception as e:
         logger.error(f"扫描失败: {e}")
