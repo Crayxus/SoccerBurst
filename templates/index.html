@@ -3,21 +3,30 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>⚽ SoccerBurst - 盘口扫描器</title>
+  <title>♠ CRAYXUS // SOCCER SNIPER</title>
   <style>
+    @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700&display=swap');
+
     :root {
-      --bg: #0d1117;
-      --card: #161b22;
-      --border: #30363d;
-      --text: #e6edf3;
-      --muted: #8b949e;
-      --green: #3fb950;
-      --red: #f85149;
-      --yellow: #d29922;
-      --blue: #58a6ff;
-      --orange: #e3b341;
-      --alert-bg: #2d1b1b;
-      --alert-border: #f85149;
+      --bg: #060810;
+      --bg2: #0c0f1a;
+      --card: #0f1320;
+      --border: #1e2538;
+      --border2: #252d45;
+      --text: #cdd6f4;
+      --muted: #6c7086;
+      --green: #a6e3a1;
+      --red: #f38ba8;
+      --yellow: #f9e2af;
+      --blue: #89b4fa;
+      --cyan: #89dceb;
+      --purple: #cba6f7;
+      --orange: #fab387;
+      --teal: #94e2d5;
+      --glow-green: 0 0 12px rgba(166,227,161,0.4);
+      --glow-red: 0 0 12px rgba(243,139,168,0.4);
+      --glow-blue: 0 0 12px rgba(137,180,250,0.4);
+      --glow-purple: 0 0 12px rgba(203,166,247,0.4);
     }
 
     * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -25,15 +34,33 @@
     body {
       background: var(--bg);
       color: var(--text);
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Microsoft YaHei", sans-serif;
+      font-family: 'JetBrains Mono', 'Fira Code', 'Consolas', monospace;
       min-height: 100vh;
+      overflow-x: hidden;
     }
 
-    /* ── Header ── */
+    /* ── SCANLINES OVERLAY ── */
+    body::before {
+      content: '';
+      position: fixed;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: repeating-linear-gradient(
+        0deg,
+        transparent,
+        transparent 2px,
+        rgba(0,0,0,0.04) 2px,
+        rgba(0,0,0,0.04) 4px
+      );
+      pointer-events: none;
+      z-index: 9999;
+    }
+
+    /* ── HEADER ── */
     header {
-      background: var(--card);
-      border-bottom: 1px solid var(--border);
-      padding: 16px 24px;
+      background: var(--bg2);
+      border-bottom: 1px solid var(--border2);
+      padding: 0 24px;
+      height: 56px;
       display: flex;
       align-items: center;
       justify-content: space-between;
@@ -43,137 +70,190 @@
     }
 
     .logo {
-      font-size: 22px;
+      font-size: 18px;
       font-weight: 700;
-      letter-spacing: 1px;
+      letter-spacing: 3px;
+      color: var(--purple);
+      text-shadow: var(--glow-purple);
     }
-
-    .logo span { color: var(--green); }
+    .logo .spade { color: var(--text); opacity: 0.9; margin-right: 8px; }
+    .logo .slash { color: var(--muted); }
 
     .header-right {
       display: flex;
       align-items: center;
-      gap: 16px;
+      gap: 20px;
+      font-size: 11px;
+      color: var(--muted);
+      letter-spacing: 1px;
     }
 
-    /* ── Status Bar ── */
-    .status-bar {
-      background: var(--card);
-      border-bottom: 1px solid var(--border);
-      padding: 10px 24px;
+    .live-dot {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      color: var(--green);
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 2px;
+    }
+    .live-dot::before {
+      content: '';
+      width: 7px; height: 7px;
+      border-radius: 50%;
+      background: var(--green);
+      box-shadow: var(--glow-green);
+      animation: blink 1.4s infinite;
+    }
+    .live-dot.offline { color: var(--muted); }
+    .live-dot.offline::before { background: var(--muted); animation: none; box-shadow: none; }
+    .live-dot.scanning { color: var(--yellow); }
+    .live-dot.scanning::before { background: var(--yellow); }
+
+    @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.2} }
+
+    /* ── MAIN LAYOUT ── */
+    main { padding: 20px 24px; max-width: 1600px; margin: 0 auto; }
+
+    /* ── SNIPER SIGNAL CARD (TOP) ── */
+    .sniper-card {
+      background: linear-gradient(135deg, #0f1320 0%, #12102a 100%);
+      border: 1px solid var(--purple);
+      border-radius: 12px;
+      padding: 20px 28px;
+      margin-bottom: 20px;
       display: flex;
       align-items: center;
-      gap: 24px;
-      font-size: 13px;
+      gap: 28px;
+      box-shadow: 0 0 30px rgba(203,166,247,0.08);
+      position: relative;
+      overflow: hidden;
+    }
+    .sniper-card::before {
+      content: '♠';
+      position: absolute;
+      right: 28px;
+      top: 50%;
+      transform: translateY(-50%);
+      font-size: 80px;
+      color: rgba(203,166,247,0.06);
+      font-weight: 700;
+    }
+    .sniper-label {
+      font-size: 10px;
+      letter-spacing: 3px;
+      color: var(--purple);
+      text-transform: uppercase;
+      margin-bottom: 4px;
+    }
+    .sniper-match {
+      font-size: 22px;
+      font-weight: 700;
+      color: var(--text);
+      letter-spacing: 1px;
+    }
+    .sniper-signal {
+      margin-left: auto;
+      text-align: right;
+    }
+    .sniper-direction {
+      font-size: 28px;
+      font-weight: 700;
+      letter-spacing: 2px;
+    }
+    .sniper-direction.home { color: var(--red); text-shadow: var(--glow-red); }
+    .sniper-direction.away { color: var(--blue); text-shadow: var(--glow-blue); }
+    .sniper-direction.neutral { color: var(--muted); }
+    .sniper-meta {
+      font-size: 11px;
       color: var(--muted);
-      flex-wrap: wrap;
+      margin-top: 4px;
     }
 
-    .status-item { display: flex; align-items: center; gap: 6px; }
-
-    .dot {
-      width: 8px; height: 8px;
-      border-radius: 50%;
-      background: var(--muted);
+    /* Momentum Bar */
+    .momentum-bar-wrap {
+      width: 200px;
+      flex-shrink: 0;
     }
-    .dot.scanning { background: var(--yellow); animation: pulse 1s infinite; }
-    .dot.ok { background: var(--green); }
-    .dot.error { background: var(--red); }
-
-    @keyframes pulse {
-      0%, 100% { opacity: 1; }
-      50% { opacity: 0.3; }
+    .momentum-label {
+      font-size: 10px;
+      letter-spacing: 2px;
+      color: var(--muted);
+      margin-bottom: 6px;
+      display: flex;
+      justify-content: space-between;
+    }
+    .momentum-label span { color: var(--text); }
+    .momentum-track {
+      height: 8px;
+      background: var(--border2);
+      border-radius: 4px;
+      overflow: hidden;
+    }
+    .momentum-fill {
+      height: 100%;
+      border-radius: 4px;
+      transition: width 1s ease;
+      background: linear-gradient(90deg, var(--purple), var(--red));
+      box-shadow: var(--glow-red);
     }
 
-    /* ── Main ── */
-    main { padding: 24px; max-width: 1400px; margin: 0 auto; }
-
-    /* ── Summary Cards ── */
-    .summary {
+    /* ── STATS ROW ── */
+    .stats-row {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-      gap: 16px;
-      margin-bottom: 24px;
+      grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+      gap: 12px;
+      margin-bottom: 20px;
     }
-
-    .summary-card {
+    .stat-card {
       background: var(--card);
       border: 1px solid var(--border);
-      border-radius: 10px;
-      padding: 20px;
-      text-align: center;
+      border-radius: 8px;
+      padding: 16px 20px;
+      position: relative;
     }
-
-    .summary-card .value {
-      font-size: 36px;
+    .stat-card .sv {
+      font-size: 32px;
       font-weight: 700;
       line-height: 1;
-      margin-bottom: 6px;
+      margin-bottom: 4px;
     }
+    .stat-card .sl { font-size: 10px; color: var(--muted); letter-spacing: 2px; text-transform: uppercase; }
+    .stat-card.alert-card { border-color: var(--red); }
+    .stat-card.alert-card .sv { color: var(--red); text-shadow: var(--glow-red); }
+    .stat-card .sv.green { color: var(--green); }
+    .stat-card .sv.blue { color: var(--blue); }
+    .stat-card .sv.yellow { color: var(--yellow); }
 
-    .summary-card .label { font-size: 13px; color: var(--muted); }
-    .summary-card.alert-card { border-color: var(--red); background: var(--alert-bg); }
-    .summary-card.alert-card .value { color: var(--red); }
-
-    /* ── Toolbar ── */
+    /* ── TOOLBAR ── */
     .toolbar {
       display: flex;
       align-items: center;
-      gap: 12px;
-      margin-bottom: 20px;
+      gap: 10px;
+      margin-bottom: 16px;
       flex-wrap: wrap;
     }
-
     .btn {
-      padding: 8px 18px;
+      padding: 7px 16px;
       border-radius: 6px;
-      border: 1px solid var(--border);
+      border: 1px solid var(--border2);
       background: var(--card);
       color: var(--text);
-      font-size: 14px;
+      font-family: inherit;
+      font-size: 12px;
+      letter-spacing: 1px;
       cursor: pointer;
-      transition: all 0.2s;
-      display: flex;
-      align-items: center;
-      gap: 6px;
+      transition: all 0.15s;
     }
+    .btn:hover { border-color: var(--purple); color: var(--purple); }
+    .btn.primary { border-color: var(--purple); color: var(--purple); }
+    .btn.primary:hover { background: rgba(203,166,247,0.1); box-shadow: var(--glow-purple); }
+    .btn.danger { border-color: var(--red); color: var(--red); }
+    .toolbar-right { margin-left: auto; display: flex; gap: 10px; align-items: center; }
+    .countdown { font-size: 12px; color: var(--muted); letter-spacing: 1px; }
 
-    .btn:hover { background: #21262d; border-color: var(--blue); }
-    .btn.primary { background: var(--blue); border-color: var(--blue); color: #000; font-weight: 600; }
-    .btn.primary:hover { background: #79c0ff; }
-    .btn:disabled { opacity: 0.5; cursor: not-allowed; }
-
-    .filter-tabs {
-      display: flex;
-      gap: 4px;
-      background: var(--card);
-      border: 1px solid var(--border);
-      border-radius: 6px;
-      padding: 3px;
-    }
-
-    .filter-tab {
-      padding: 5px 14px;
-      border-radius: 4px;
-      font-size: 13px;
-      cursor: pointer;
-      color: var(--muted);
-      transition: all 0.2s;
-      border: none;
-      background: transparent;
-    }
-
-    .filter-tab.active {
-      background: #21262d;
-      color: var(--text);
-    }
-
-    /* ── Match Cards ── */
-    .matches-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(420px, 1fr));
-      gap: 16px;
-    }
+    /* ── MATCH CARDS ── */
+    .matches-grid { display: flex; flex-direction: column; gap: 12px; }
 
     .match-card {
       background: var(--card);
@@ -182,690 +262,438 @@
       overflow: hidden;
       transition: border-color 0.2s;
     }
-
-    .match-card:hover { border-color: var(--blue); }
-
-    .match-card.alert {
-      border-color: var(--red);
-      box-shadow: 0 0 12px rgba(248, 81, 73, 0.2);
-    }
+    .match-card:hover { border-color: var(--border2); }
+    .match-card.rank-1 { border-color: var(--purple); box-shadow: 0 0 20px rgba(203,166,247,0.06); }
+    .match-card.rank-2 { border-color: rgba(137,180,250,0.4); }
+    .match-card.rank-3 { border-color: rgba(148,226,213,0.3); }
+    .match-card.has-alert { border-color: var(--red); box-shadow: 0 0 16px rgba(243,139,168,0.1); }
 
     .match-header {
-      padding: 14px 16px;
+      padding: 14px 20px;
       display: flex;
       align-items: center;
-      justify-content: space-between;
-      border-bottom: 1px solid var(--border);
+      gap: 16px;
+      cursor: pointer;
+      user-select: none;
+      border-bottom: 1px solid transparent;
+      transition: background 0.15s;
     }
+    .match-header:hover { background: rgba(255,255,255,0.02); }
+    .match-header.expanded { border-bottom-color: var(--border); }
+
+    .rank-badge {
+      width: 28px; height: 28px;
+      border-radius: 6px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 12px;
+      font-weight: 700;
+      flex-shrink: 0;
+    }
+    .rank-badge.r1 { background: rgba(203,166,247,0.15); color: var(--purple); border: 1px solid var(--purple); }
+    .rank-badge.r2 { background: rgba(137,180,250,0.1); color: var(--blue); border: 1px solid rgba(137,180,250,0.3); }
+    .rank-badge.r3 { background: rgba(148,226,213,0.1); color: var(--teal); border: 1px solid rgba(148,226,213,0.3); }
+    .rank-badge.rn { background: var(--bg2); color: var(--muted); border: 1px solid var(--border); }
 
     .match-teams {
+      flex: 1;
+      min-width: 0;
+    }
+    .match-teams .teams-name {
       font-size: 15px;
       font-weight: 600;
+      letter-spacing: 0.5px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
     }
-
-    .match-teams .vs {
+    .match-teams .teams-meta {
+      font-size: 11px;
       color: var(--muted);
-      font-weight: 400;
-      font-size: 13px;
-      margin: 0 6px;
+      margin-top: 3px;
     }
 
-    .badge {
-      padding: 3px 10px;
-      border-radius: 20px;
-      font-size: 12px;
-      font-weight: 600;
+    .match-heat {
+      text-align: right;
+      flex-shrink: 0;
     }
-
-    .badge.alert { background: var(--red); color: #fff; }
-    .badge.ok { background: #1f3a1f; color: var(--green); border: 1px solid var(--green); }
-    .badge.no-data { background: #1c2128; color: var(--muted); border: 1px solid var(--border); }
-
-    .match-body { padding: 14px 16px; }
-
-    .alert-reason {
-      background: var(--alert-bg);
-      border: 1px solid var(--alert-border);
-      border-radius: 6px;
-      padding: 10px 12px;
-      font-size: 13px;
-      color: var(--red);
-      margin-bottom: 12px;
-      line-height: 1.5;
-    }
-
-    .alert-reason::before { content: "⚠️ "; }
-
-    .max-change {
-      font-size: 13px;
-      color: var(--muted);
-      margin-bottom: 10px;
-    }
-
-    .max-change .change-value {
+    .heat-score {
+      font-size: 22px;
       font-weight: 700;
-      font-size: 15px;
+      color: var(--yellow);
+    }
+    .heat-label { font-size: 10px; color: var(--muted); letter-spacing: 1px; }
+
+    /* Signal pill */
+    .signal-pill {
+      padding: 4px 12px;
+      border-radius: 20px;
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 1px;
+      flex-shrink: 0;
+      white-space: nowrap;
+    }
+    .signal-pill.home { background: rgba(243,139,168,0.15); color: var(--red); border: 1px solid rgba(243,139,168,0.3); }
+    .signal-pill.away { background: rgba(137,180,250,0.15); color: var(--blue); border: 1px solid rgba(137,180,250,0.3); }
+    .signal-pill.neutral { background: var(--bg2); color: var(--muted); border: 1px solid var(--border); }
+
+    .momentum-mini {
+      width: 80px;
+      flex-shrink: 0;
+    }
+    .momentum-mini-track {
+      height: 4px;
+      background: var(--border2);
+      border-radius: 2px;
+      overflow: hidden;
+      margin-top: 4px;
+    }
+    .momentum-mini-fill {
+      height: 100%;
+      border-radius: 2px;
+      background: linear-gradient(90deg, var(--purple), var(--red));
+    }
+    .momentum-mini-val {
+      font-size: 10px;
+      color: var(--muted);
+      letter-spacing: 1px;
     }
 
-    .change-value.high { color: var(--red); }
-    .change-value.mid { color: var(--yellow); }
-    .change-value.low { color: var(--green); }
+    .chevron {
+      color: var(--muted);
+      font-size: 12px;
+      flex-shrink: 0;
+      transition: transform 0.2s;
+    }
+    .chevron.open { transform: rotate(90deg); }
 
-    /* ── Odds Table ── */
+    /* ── MATCH BODY (expanded) ── */
+    .match-body { display: none; padding: 16px 20px; }
+    .match-body.open { display: block; }
+
+    /* Signal detail bar */
+    .signal-detail {
+      background: var(--bg2);
+      border: 1px solid var(--border2);
+      border-radius: 8px;
+      padding: 14px 18px;
+      margin-bottom: 16px;
+      display: flex;
+      gap: 28px;
+      flex-wrap: wrap;
+      align-items: center;
+    }
+    .sd-item { font-size: 11px; }
+    .sd-item .sd-k { color: var(--muted); letter-spacing: 1px; margin-bottom: 2px; font-size: 10px; }
+    .sd-item .sd-v { font-size: 14px; font-weight: 600; color: var(--text); }
+    .sd-item .sd-v.up { color: var(--green); }
+    .sd-item .sd-v.down { color: var(--red); }
+    .sd-item .sd-v.blue { color: var(--blue); }
+
+    /* Odds table */
+    .table-wrap { overflow-x: auto; }
     .odds-table {
       width: 100%;
       border-collapse: collapse;
-      font-size: 13px;
-    }
-
-    .odds-table th {
-      text-align: center;
-      padding: 6px 8px;
-      color: var(--muted);
-      font-weight: 500;
-      border-bottom: 1px solid var(--border);
-    }
-
-    .odds-table td {
-      text-align: center;
-      padding: 5px 8px;
-      border-bottom: 1px solid #21262d;
-    }
-
-    .odds-table tr:last-child td { border-bottom: none; }
-
-    .odds-table .home-odds { color: var(--orange); font-weight: 600; }
-    .odds-table .away-odds { color: var(--blue); font-weight: 600; }
-    .odds-table .handicap { color: var(--muted); }
-    .odds-table .time-col { color: var(--muted); font-size: 12px; }
-
-    /* 40分钟窗口内的记录高亮 */
-    .odds-table tr.in-window {
-      background: rgba(88, 166, 255, 0.08);
-      border-left: 2px solid var(--blue);
-    }
-    .odds-table tr.in-window td { border-bottom-color: rgba(88, 166, 255, 0.15); }
-    .window-label {
-      display: inline-block;
-      font-size: 11px;
-      color: var(--blue);
-      background: rgba(88, 166, 255, 0.12);
-      border: 1px solid rgba(88, 166, 255, 0.3);
-      border-radius: 3px;
-      padding: 1px 5px;
-      margin-left: 4px;
-      vertical-align: middle;
-    }
-
-    .no-records {
-      text-align: center;
-      color: var(--muted);
-      font-size: 13px;
-      padding: 16px;
-    }
-
-    .match-footer {
-      padding: 8px 16px;
-      border-top: 1px solid var(--border);
       font-size: 12px;
+    }
+    .odds-table th {
+      background: var(--bg2);
       color: var(--muted);
+      font-size: 10px;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      padding: 8px 12px;
+      text-align: left;
+      border-bottom: 1px solid var(--border);
+      white-space: nowrap;
+    }
+    .odds-table td {
+      padding: 7px 12px;
+      border-bottom: 1px solid rgba(30,37,56,0.6);
+      white-space: nowrap;
+    }
+    .odds-table tr:last-child td { border-bottom: none; }
+    .odds-table tr:hover td { background: rgba(255,255,255,0.015); }
+
+    .odds-table tr.in-window td { background: rgba(137,180,250,0.04); }
+    .odds-table tr.in-window td:first-child { border-left: 2px solid var(--blue); }
+
+    .odds-home { color: var(--red); font-weight: 600; }
+    .odds-away { color: var(--blue); font-weight: 600; }
+    .odds-hcap { color: var(--yellow); font-weight: 600; }
+    .status-ji { color: var(--red); font-size: 10px; }
+    .status-zao { color: var(--green); font-size: 10px; }
+
+    .more-records-btn {
+      display: block;
+      width: 100%;
+      padding: 8px;
+      margin-top: 8px;
+      background: none;
+      border: 1px dashed var(--border2);
+      border-radius: 6px;
+      color: var(--muted);
+      font-family: inherit;
+      font-size: 11px;
+      cursor: pointer;
+      text-align: center;
+      letter-spacing: 1px;
+    }
+    .more-records-btn:hover { border-color: var(--purple); color: var(--purple); }
+
+    /* Bet365 section */
+    .bet365-section {
+      margin-top: 16px;
+      background: var(--bg2);
+      border: 1px solid var(--border2);
+      border-radius: 8px;
+      padding: 14px 18px;
+    }
+    .bet365-title {
+      font-size: 10px;
+      color: var(--orange);
+      letter-spacing: 3px;
+      text-transform: uppercase;
+      margin-bottom: 12px;
+    }
+    .hcap-grid {
       display: flex;
-      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+    .hcap-pill {
+      background: var(--card);
+      border: 1px solid var(--border2);
+      border-radius: 6px;
+      padding: 8px 14px;
+      font-size: 12px;
+    }
+    .hcap-pill .hp-line { color: var(--yellow); font-weight: 600; }
+    .hcap-pill .hp-odds { color: var(--muted); font-size: 11px; margin-top: 2px; }
+
+    /* ── ALERT BADGE ── */
+    .alert-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 3px 10px;
+      background: rgba(243,139,168,0.12);
+      border: 1px solid rgba(243,139,168,0.3);
+      border-radius: 4px;
+      color: var(--red);
+      font-size: 10px;
+      letter-spacing: 1px;
     }
 
-    /* ── Empty State ── */
-    .empty-state {
+    /* ── EMPTY STATE ── */
+    .empty {
       text-align: center;
       padding: 80px 20px;
       color: var(--muted);
     }
+    .empty .e-icon { font-size: 48px; margin-bottom: 16px; opacity: 0.3; }
+    .empty .e-text { font-size: 13px; letter-spacing: 1px; }
 
-    .empty-state .icon { font-size: 64px; margin-bottom: 16px; }
-    .empty-state h3 { font-size: 20px; margin-bottom: 8px; color: var(--text); }
-
-    /* ── Loading ── */
-    .loading-overlay {
+    /* ── TOAST ── */
+    #toast-container {
       position: fixed;
-      inset: 0;
-      background: rgba(13, 17, 23, 0.8);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      z-index: 999;
-      display: none;
-    }
-
-    .loading-overlay.show { display: flex; }
-
-    .spinner {
-      width: 48px; height: 48px;
-      border: 4px solid var(--border);
-      border-top-color: var(--blue);
-      border-radius: 50%;
-      animation: spin 0.8s linear infinite;
-    }
-
-    @keyframes spin { to { transform: rotate(360deg); } }
-
-    /* ── Alert Toast ── */
-    .toast-container {
-      position: fixed;
-      top: 80px;
-      right: 20px;
-      z-index: 200;
+      bottom: 24px;
+      right: 24px;
+      z-index: 9000;
       display: flex;
       flex-direction: column;
       gap: 8px;
     }
-
     .toast {
-      background: var(--alert-bg);
-      border: 1px solid var(--red);
-      border-radius: 8px;
-      padding: 12px 16px;
-      max-width: 360px;
-      font-size: 14px;
-      animation: slideIn 0.3s ease;
-      box-shadow: 0 4px 20px rgba(0,0,0,0.4);
-    }
-
-    .toast .toast-title { font-weight: 700; color: var(--red); margin-bottom: 4px; }
-    .toast .toast-body { color: var(--text); font-size: 13px; }
-
-    @keyframes slideIn {
-      from { transform: translateX(100%); opacity: 0; }
-      to { transform: translateX(0); opacity: 1; }
-    }
-
-    /* ── Countdown ── */
-    #countdown { font-weight: 600; color: var(--blue); }
-
-    /* ── bet365 History Section ── */
-    .history-section {
-      margin-top: 40px;
-      padding-top: 24px;
-      border-top: 2px solid var(--border);
-    }
-
-    .history-section h2 {
-      font-size: 18px;
-      font-weight: 700;
-      margin-bottom: 16px;
-      display: flex;
-      align-items: center;
-      gap: 8px;
-    }
-
-    .history-card {
       background: var(--card);
-      border: 1px solid var(--border);
-      border-radius: 10px;
-      margin-bottom: 16px;
-      overflow: hidden;
-    }
-
-    .history-card.settled {
-      border-color: var(--green);
-    }
-
-    .history-header {
-      padding: 12px 16px;
-      background: #1c2128;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      flex-wrap: wrap;
-      gap: 8px;
-    }
-
-    .history-title {
-      font-size: 15px;
-      font-weight: 600;
-    }
-
-    .history-meta {
+      border: 1px solid var(--border2);
+      border-left: 3px solid var(--purple);
+      padding: 10px 16px;
+      border-radius: 8px;
       font-size: 12px;
-      color: var(--muted);
-      display: flex;
-      gap: 12px;
-      flex-wrap: wrap;
+      max-width: 320px;
+      animation: slideIn 0.2s ease;
     }
+    @keyframes slideIn { from { transform: translateX(20px); opacity: 0; } to { transform: none; opacity: 1; } }
 
-    .history-body {
-      padding: 14px 16px;
-    }
-
-    .history-body .bet365-table {
-      width: 100%;
-      border-collapse: collapse;
-      font-size: 13px;
-      margin-bottom: 12px;
-    }
-
-    .bet365-table th {
-      text-align: center;
-      padding: 6px 8px;
-      color: var(--muted);
-      font-weight: 500;
-      border-bottom: 1px solid var(--border);
-      background: #1c2128;
-    }
-
-    .bet365-table td {
-      text-align: center;
-      padding: 5px 8px;
-      border-bottom: 1px solid #21262d;
-    }
-
-    .bet365-table tr:last-child td { border-bottom: none; }
-    .bet365-table .home-hc { color: var(--orange); font-weight: 600; }
-    .bet365-table .away-hc { color: var(--blue); font-weight: 600; }
-    .bet365-table tr.winner-home { background: rgba(63, 185, 80, 0.12); }
-    .bet365-table tr.winner-away { background: rgba(88, 166, 255, 0.12); }
-    .bet365-table tr.winner-push { background: rgba(210, 153, 34, 0.12); }
-    .bet365-table .win-badge {
-      display: inline-block;
-      font-size: 11px;
-      padding: 1px 6px;
-      border-radius: 3px;
-      font-weight: 600;
-    }
-    .win-badge.home { background: rgba(63,185,80,0.2); color: var(--green); border: 1px solid var(--green); }
-    .win-badge.away { background: rgba(88,166,255,0.2); color: var(--blue); border: 1px solid var(--blue); }
-    .win-badge.push { background: rgba(210,153,34,0.2); color: var(--yellow); border: 1px solid var(--yellow); }
-
-    .result-form {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      flex-wrap: wrap;
-      margin-top: 10px;
-      padding-top: 10px;
+    /* ── LAST UPDATED BAR ── */
+    .bottom-bar {
+      background: var(--bg2);
       border-top: 1px solid var(--border);
-    }
-
-    .result-form label { font-size: 13px; color: var(--muted); }
-
-    .result-form input[type="number"] {
-      width: 60px;
-      padding: 5px 8px;
-      background: #21262d;
-      border: 1px solid var(--border);
-      border-radius: 4px;
-      color: var(--text);
-      font-size: 14px;
-      text-align: center;
-    }
-
-    .result-form .score-sep {
-      font-size: 18px;
-      font-weight: 700;
+      padding: 8px 24px;
+      font-size: 10px;
       color: var(--muted);
-    }
-
-    .result-settled {
+      letter-spacing: 1px;
       display: flex;
-      align-items: center;
-      gap: 10px;
-      font-size: 14px;
-      margin-top: 10px;
-      padding-top: 10px;
-      border-top: 1px solid var(--border);
+      gap: 24px;
     }
 
-    .result-score {
-      font-size: 20px;
-      font-weight: 700;
-      color: var(--green);
-    }
-
-    .no-bet365 {
-      text-align: center;
-      color: var(--muted);
-      font-size: 13px;
-      padding: 12px;
-      font-style: italic;
-    }
-
-    /* ── Responsive ── */
-    @media (max-width: 600px) {
-      .matches-grid { grid-template-columns: 1fr; }
-      header { flex-direction: column; gap: 10px; }
-    }
+    /* scrollbar */
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: var(--bg); }
+    ::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 3px; }
+    ::-webkit-scrollbar-thumb:hover { background: var(--muted); }
   </style>
 </head>
 <body>
 
-<!-- Header -->
 <header>
-  <div class="logo">⚽ Soccer<span>Burst</span></div>
+  <div class="logo">
+    <span class="spade">♠</span>CRAYXUS<span class="slash"> // </span>SOCCER SNIPER
+  </div>
   <div class="header-right">
-    <span style="font-size:13px;color:var(--muted)">下次扫描：<span id="countdown">--</span></span>
-    <button class="btn primary" id="scanBtn" onclick="triggerScan()">🔍 立即扫描</button>
+    <span id="live-indicator" class="live-dot offline">OFFLINE</span>
+    <span id="header-time" style="font-size:11px;letter-spacing:1px;"></span>
   </div>
 </header>
 
-<!-- Status Bar -->
-<div class="status-bar">
-  <div class="status-item">
-    <div class="dot" id="statusDot"></div>
-    <span id="statusText">初始化中...</span>
-  </div>
-  <div class="status-item">📅 最后更新：<span id="lastUpdated">--</span></div>
-  <div class="status-item">🔄 扫描次数：<span id="scanCount">0</span></div>
-  <div class="status-item" id="errorItem" style="display:none;color:var(--red)">❌ <span id="errorText"></span></div>
-</div>
-
-<!-- Main -->
 <main>
-  <!-- Summary -->
-  <div class="summary">
-    <div class="summary-card">
-      <div class="value" id="totalMatches">0</div>
-      <div class="label">今日比赛</div>
-    </div>
-    <div class="summary-card alert-card">
-      <div class="value" id="alertCount">0</div>
-      <div class="label">⚠️ 报警比赛</div>
-    </div>
-    <div class="summary-card">
-      <div class="value" id="noDataCount" style="color:var(--muted)">0</div>
-      <div class="label">暂无数据</div>
-    </div>
-    <div class="summary-card">
-      <div class="value" id="maxChangeDisplay" style="color:var(--orange)">0.00</div>
-      <div class="label">最大赔率变化</div>
-    </div>
-  </div>
 
-  <!-- Toolbar -->
-  <div class="toolbar">
-    <div class="filter-tabs">
-      <button class="filter-tab active" onclick="setFilter('all', this)">全部</button>
-      <button class="filter-tab" onclick="setFilter('alert', this)">⚠️ 仅报警</button>
-      <button class="filter-tab" onclick="setFilter('normal', this)">正常</button>
+  <!-- SNIPER SIGNAL CARD -->
+  <div class="sniper-card" id="sniper-card">
+    <div>
+      <div class="sniper-label">▶ TODAY'S SNIPER TARGET</div>
+      <div class="sniper-match" id="sniper-match">-- 等待数据 --</div>
+      <div class="sniper-meta" id="sniper-meta">扫描中...</div>
     </div>
-    <span style="font-size:13px;color:var(--muted);margin-left:auto">
-      数据来源：titan007.com Crow* 亚让赔率 | 报警阈值：同盘口赔率变化 ≥ 0.10
-    </span>
-  </div>
-
-  <!-- Matches -->
-  <div class="matches-grid" id="matchesGrid">
-    <div class="empty-state" style="grid-column:1/-1">
-      <div class="icon">⏳</div>
-      <h3>等待首次扫描...</h3>
-      <p>系统启动后将自动开始扫描，或点击"立即扫描"手动触发</p>
-    </div>
-  </div>
-
-  <!-- bet365 历史记录 -->
-  <div class="history-section">
-    <h2>📊 bet365 热度第一名 · Alternative Asian Handicap 历史记录</h2>
-    <div id="historyContainer">
-      <div class="empty-state" style="padding:40px 20px">
-        <div class="icon" style="font-size:40px">📋</div>
-        <h3>暂无历史记录</h3>
-        <p>每次扫描后，热度第一名的 bet365 赔率将自动记录在此</p>
+    <div class="momentum-bar-wrap">
+      <div class="momentum-label">MOMENTUM <span id="sniper-momentum-val">0</span></div>
+      <div class="momentum-track">
+        <div class="momentum-fill" id="sniper-momentum-fill" style="width:0%"></div>
       </div>
     </div>
+    <div class="sniper-signal">
+      <div class="sniper-direction neutral" id="sniper-direction">---</div>
+      <div class="sniper-meta" id="sniper-signal-label">等待信号</div>
+    </div>
   </div>
+
+  <!-- STATS ROW -->
+  <div class="stats-row">
+    <div class="stat-card">
+      <div class="sv green" id="stat-matches">--</div>
+      <div class="sl">TRACKED MATCHES</div>
+    </div>
+    <div class="stat-card alert-card">
+      <div class="sv" id="stat-alerts">--</div>
+      <div class="sl">ALERTS FIRED</div>
+    </div>
+    <div class="stat-card">
+      <div class="sv blue" id="stat-top-heat">--</div>
+      <div class="sl">TOP HEAT SCORE</div>
+    </div>
+    <div class="stat-card">
+      <div class="sv yellow" id="stat-last">--</div>
+      <div class="sl">LAST SCAN</div>
+    </div>
+    <div class="stat-card">
+      <div class="sv" id="stat-next" style="color:var(--purple)">--</div>
+      <div class="sl">NEXT SCAN IN</div>
+    </div>
+  </div>
+
+  <!-- TOOLBAR -->
+  <div class="toolbar">
+    <span style="font-size:10px;color:var(--muted);letter-spacing:2px;">▶ MATCHES</span>
+    <button class="btn primary" onclick="refreshData()">⟳ REFRESH</button>
+    <button class="btn" onclick="triggerScan()">⚡ SCAN NOW</button>
+    <div class="toolbar-right">
+      <span class="countdown" id="countdown-display"></span>
+    </div>
+  </div>
+
+  <!-- MATCHES LIST -->
+  <div class="matches-grid" id="matches-container">
+    <div class="empty">
+      <div class="e-icon">♠</div>
+      <div class="e-text">LOADING DATA...</div>
+    </div>
+  </div>
+
 </main>
 
-<!-- Toast Container -->
-<div class="toast-container" id="toastContainer"></div>
-
-<!-- Loading Overlay -->
-<div class="loading-overlay" id="loadingOverlay">
-  <div style="text-align:center">
-    <div class="spinner"></div>
-    <p style="margin-top:16px;color:var(--muted)">正在扫描盘口数据...</p>
-  </div>
+<div class="bottom-bar">
+  <span>CRAYXUS ENGINE v2.0</span>
+  <span id="bottom-updated">LAST UPDATED: --</span>
+  <span>UPSERT MODE: ALL RECORDS RETAINED UNTIL KICKOFF</span>
 </div>
 
+<div id="toast-container"></div>
+
 <script>
-  let currentFilter = 'all';
-  let allMatches = [];
-  let prevAlertIds = new Set();
+  let allData = null;
   let nextScanTime = null;
   let countdownTimer = null;
 
-  // ── 数据加载 ──
-  async function loadData() {
+  // ── Clock ──
+  function updateClock() {
+    const now = new Date();
+    document.getElementById('header-time').textContent =
+      now.toLocaleTimeString('zh-CN', { hour12: false });
+  }
+  setInterval(updateClock, 1000);
+  updateClock();
+
+  // ── Toast ──
+  function toast(msg, type='info') {
+    const c = document.getElementById('toast-container');
+    const t = document.createElement('div');
+    t.className = 'toast';
+    t.style.borderLeftColor = type === 'alert' ? 'var(--red)' : type === 'ok' ? 'var(--green)' : 'var(--purple)';
+    t.textContent = msg;
+    c.appendChild(t);
+    setTimeout(() => t.remove(), 6000);
+  }
+
+  // ── Refresh ──
+  async function refreshData() {
     try {
-      const res = await fetch('/api/data');
-      const json = await res.json();
-      updateUI(json);
-    } catch (e) {
-      console.error('加载数据失败:', e);
+      const r = await fetch('/api/data');
+      const data = await r.json();
+      allData = data;
+      renderAll(data);
+      updateScanStatus(data.scan_status);
+    } catch(e) {
+      toast('数据加载失败: ' + e.message, 'alert');
     }
   }
 
-  function updateUI(json) {
-    const matches = json.matches || [];
-    const status = json.scan_status || {};
-
-    allMatches = matches;
-
-    // 更新状态栏
-    const dot = document.getElementById('statusDot');
-    const statusText = document.getElementById('statusText');
-
-    if (status.is_scanning) {
-      dot.className = 'dot scanning';
-      statusText.textContent = '正在扫描中...';
-      document.getElementById('loadingOverlay').classList.add('show');
-    } else {
-      document.getElementById('loadingOverlay').classList.remove('show');
-      if (status.error) {
-        dot.className = 'dot error';
-        statusText.textContent = '扫描出错';
-        document.getElementById('errorItem').style.display = 'flex';
-        document.getElementById('errorText').textContent = status.error;
-      } else {
-        dot.className = 'dot ok';
-        statusText.textContent = '运行正常';
-        document.getElementById('errorItem').style.display = 'none';
-      }
+  async function triggerScan() {
+    try {
+      const r = await fetch('/api/scan', { method: 'POST' });
+      const d = await r.json();
+      toast(d.message, d.success ? 'ok' : 'alert');
+      if (d.success) setTimeout(refreshData, 3000);
+    } catch(e) {
+      toast('扫描触发失败', 'alert');
     }
+  }
 
-    document.getElementById('lastUpdated').textContent = json.last_updated || '--';
-    document.getElementById('scanCount').textContent = status.scan_count || 0;
-
-    // 更新倒计时
+  // ── Scan Status ──
+  function updateScanStatus(status) {
+    if (!status) return;
+    const ind = document.getElementById('live-indicator');
+    if (status.is_scanning) {
+      ind.className = 'live-dot scanning';
+      ind.textContent = 'SCANNING';
+    } else if (status.error) {
+      ind.className = 'live-dot offline';
+      ind.textContent = 'ERROR';
+    } else {
+      ind.className = 'live-dot';
+      ind.textContent = 'LIVE';
+    }
     if (status.next_scan) {
       nextScanTime = new Date(status.next_scan.replace(' ', 'T'));
       startCountdown();
     }
-
-    // 统计
-    const alertMatches = matches.filter(m => m.alert);
-    const noDataMatches = matches.filter(m => !m.ji_records || m.ji_records.length === 0);
-    const maxChange = matches.reduce((max, m) => Math.max(max, m.max_change || 0), 0);
-
-    document.getElementById('totalMatches').textContent = matches.length;
-    document.getElementById('alertCount').textContent = alertMatches.length;
-    document.getElementById('noDataCount').textContent = noDataMatches.length;
-    document.getElementById('maxChangeDisplay').textContent = maxChange.toFixed(2);
-
-    // 检查新报警
-    const newAlerts = alertMatches.filter(m => !prevAlertIds.has(m.match_id));
-    newAlerts.forEach(m => showAlertToast(m));
-    prevAlertIds = new Set(alertMatches.map(m => m.match_id));
-
-    // 渲染比赛卡片
-    renderMatches();
-  }
-
-  function renderMatches() {
-    const grid = document.getElementById('matchesGrid');
-
-    let filtered = allMatches;
-    if (currentFilter === 'alert') filtered = allMatches.filter(m => m.alert);
-    if (currentFilter === 'normal') filtered = allMatches.filter(m => !m.alert);
-
-    // 报警的排在前面
-    filtered.sort((a, b) => {
-      if (a.alert && !b.alert) return -1;
-      if (!a.alert && b.alert) return 1;
-      return (b.max_change || 0) - (a.max_change || 0);
-    });
-
-    if (filtered.length === 0) {
-      grid.innerHTML = `
-        <div class="empty-state" style="grid-column:1/-1">
-          <div class="icon">${currentFilter === 'alert' ? '✅' : '📭'}</div>
-          <h3>${currentFilter === 'alert' ? '暂无报警比赛' : '暂无数据'}</h3>
-          <p>${currentFilter === 'alert' ? '当前没有赔率变化超过0.10的比赛' : '请等待扫描完成或手动触发扫描'}</p>
-        </div>`;
-      return;
+    const lastEl = document.getElementById('stat-last');
+    if (status.last_scan) {
+      lastEl.textContent = status.last_scan.split(' ')[1] || status.last_scan;
     }
-
-    grid.innerHTML = filtered.map(m => renderMatchCard(m)).join('');
   }
 
-  function renderMatchCard(m) {
-    const isAlert = m.alert;
-    const records = m.ji_records || [];
-    const hasData = records.length > 0;
-    const rank = m.rank || 0;
-
-    // 热度排名徽章
-    const rankBadge = rank === 1
-      ? `<span style="background:#d29922;color:#000;font-size:11px;font-weight:700;padding:2px 7px;border-radius:10px;margin-right:6px">🔥 热度#1</span>`
-      : rank === 2
-        ? `<span style="background:#8b949e;color:#000;font-size:11px;font-weight:700;padding:2px 7px;border-radius:10px;margin-right:6px">🥈 热度#2</span>`
-        : rank === 3
-          ? `<span style="background:#cd7f32;color:#000;font-size:11px;font-weight:700;padding:2px 7px;border-radius:10px;margin-right:6px">🥉 热度#3</span>`
-          : '';
-
-    const badgeHtml = isAlert
-      ? `<span class="badge alert">⚠️ 报警</span>`
-      : hasData
-        ? `<span class="badge ok">✓ 正常</span>`
-        : `<span class="badge no-data">无数据</span>`;
-
-    const alertHtml = isAlert
-      ? `<div class="alert-reason">${m.alert_reason}</div>`
-      : '';
-
-    const changeClass = (m.max_change || 0) >= 0.10 ? 'high'
-                      : (m.max_change || 0) >= 0.05 ? 'mid' : 'low';
-
-    const changeHtml = hasData
-      ? `<div class="max-change">最大变化幅度：<span class="change-value ${changeClass}">${(m.max_change || 0).toFixed(3)}</span></div>`
-      : '';
-
-    // 窗口内记录数量（用于显示标签）
-    const windowCount = records.filter(r => r.in_window).length;
-    const windowLabel = windowCount > 0
-      ? `<span class="window-label">⏱ 40分钟窗口: ${windowCount}条</span>`
-      : '';
-
-    const tableHtml = hasData
-      ? `<table class="odds-table">
-          <thead>
-            <tr>
-              <th>主队赔率</th>
-              <th>盘口</th>
-              <th>客队赔率</th>
-              <th>时间</th>
-            </tr>
-          </thead>
-          <tbody>
-            ${records.slice(0, 10).map(r => `
-              <tr class="${r.in_window ? 'in-window' : ''}">
-                <td class="home-odds">${r.home_odds.toFixed(2)}</td>
-                <td class="handicap">${r.handicap || '-'}</td>
-                <td class="away-odds">${r.away_odds.toFixed(2)}</td>
-                <td class="time-col">${r.time || '-'}</td>
-              </tr>
-            `).join('')}
-          </tbody>
-        </table>`
-      : `<div class="no-records">暂无"即"标记赔率记录</div>`;
-
-    return `
-      <div class="match-card ${isAlert ? 'alert' : ''}">
-        <div class="match-header">
-          <div class="match-teams">
-            ${rankBadge}${m.home || '主队'} <span class="vs">VS</span> ${m.away || '客队'}
-          </div>
-          ${badgeHtml}
-        </div>
-        <div class="match-body">
-          ${alertHtml}
-          ${changeHtml}
-          ${tableHtml}
-        </div>
-        <div class="match-footer">
-          <span>比赛ID: ${m.match_id} | 🔥 热度: ${m.crow_record_count ?? 0}条 × ${m.time_weight ?? 1}x = ${m.heat_score ?? m.crow_record_count ?? 0}</span>
-          <span>${m.scraped_at || ''}</span>
-        </div>
-      </div>`;
-  }
-
-  // ── 过滤 ──
-  function setFilter(filter, el) {
-    currentFilter = filter;
-    document.querySelectorAll('.filter-tab').forEach(t => t.classList.remove('active'));
-    el.classList.add('active');
-    renderMatches();
-  }
-
-  // ── 手动扫描 ──
-  async function triggerScan() {
-    const btn = document.getElementById('scanBtn');
-    btn.disabled = true;
-    btn.textContent = '⏳ 扫描中...';
-
-    try {
-      const res = await fetch('/api/scan', { method: 'POST' });
-      const json = await res.json();
-      if (!json.success) {
-        alert(json.message);
-      }
-    } catch (e) {
-      alert('触发扫描失败: ' + e.message);
-    }
-
-    setTimeout(() => {
-      btn.disabled = false;
-      btn.innerHTML = '🔍 立即扫描';
-    }, 3000);
-  }
-
-  // ── 报警 Toast ──
-  function showAlertToast(match) {
-    const container = document.getElementById('toastContainer');
-    const toast = document.createElement('div');
-    toast.className = 'toast';
-    toast.innerHTML = `
-      <div class="toast-title">⚠️ 盘口报警！</div>
-      <div class="toast-body">
-        <strong>${match.home} vs ${match.away}</strong><br>
-        ${match.alert_reason}
-      </div>`;
-    container.appendChild(toast);
-
-    // 播放提示音（如果浏览器支持）
-    try {
-      const ctx = new AudioContext();
-      const osc = ctx.createOscillator();
-      const gain = ctx.createGain();
-      osc.connect(gain);
-      gain.connect(ctx.destination);
-      osc.frequency.value = 880;
-      gain.gain.setValueAtTime(0.3, ctx.currentTime);
-      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.5);
-      osc.start(ctx.currentTime);
-      osc.stop(ctx.currentTime + 0.5);
-    } catch (e) {}
-
-    setTimeout(() => toast.remove(), 8000);
-  }
-
-  // ── 倒计时 ──
   function startCountdown() {
     if (countdownTimer) clearInterval(countdownTimer);
     countdownTimer = setInterval(() => {
@@ -873,246 +701,249 @@
       const diff = Math.max(0, Math.floor((nextScanTime - Date.now()) / 1000));
       const m = Math.floor(diff / 60);
       const s = diff % 60;
-      document.getElementById('countdown').textContent =
-        `${m}:${s.toString().padStart(2, '0')}`;
+      const txt = `${m}:${s.toString().padStart(2,'0')}`;
+      document.getElementById('stat-next').textContent = txt;
+      document.getElementById('countdown-display').textContent = `NEXT SCAN ${txt}`;
     }, 1000);
   }
 
-  // ── bet365 历史记录 ──
-  async function loadHistory() {
-    try {
-      const res = await fetch('/api/history');
-      const json = await res.json();
-      renderHistory(json.history || []);
-    } catch (e) {
-      console.error('加载历史记录失败:', e);
-    }
+  // ── Render All ──
+  function renderAll(data) {
+    // Stats
+    document.getElementById('stat-matches').textContent = data.total_matches || 0;
+    document.getElementById('stat-alerts').textContent = data.alert_count || 0;
+    document.getElementById('bottom-updated').textContent = 'LAST UPDATED: ' + (data.last_updated || '--');
+
+    const matches = data.matches || [];
+    const topHeat = matches.length > 0 ? (matches[0].heat_score || 0).toFixed(1) : '--';
+    document.getElementById('stat-top-heat').textContent = topHeat;
+
+    // Sniper card
+    renderSniperCard(matches);
+
+    // Match cards
+    renderMatches(matches);
   }
 
-  function renderHistory(history) {
-    const container = document.getElementById('historyContainer');
-    if (!history.length) {
-      container.innerHTML = `
-        <div class="empty-state" style="padding:40px 20px">
-          <div class="icon" style="font-size:40px">📋</div>
-          <h3>暂无历史记录</h3>
-          <p>每次扫描后，热度第一名的 bet365 赔率将自动记录在此</p>
-        </div>`;
+  // ── Sniper Card ──
+  function renderSniperCard(matches) {
+    const top = matches.find(m => m.rank === 1) || matches[0];
+    if (!top) return;
+
+    document.getElementById('sniper-match').textContent =
+      `${top.home || '?'} vs ${top.away || '?'}`;
+    document.getElementById('sniper-meta').textContent =
+      `[${top.league || '--'}] ${top.match_time || ''} | HEAT: ${top.heat_score || 0}`;
+
+    const sig = top.crayxus_signal || {};
+    const mom = sig.momentum || 0;
+    document.getElementById('sniper-momentum-val').textContent = mom;
+    document.getElementById('sniper-momentum-fill').style.width = mom + '%';
+
+    const dirEl = document.getElementById('sniper-direction');
+    const labEl = document.getElementById('sniper-signal-label');
+    const dir = sig.direction || 'neutral';
+    dirEl.className = 'sniper-direction ' + dir;
+
+    if (dir === 'home') {
+      dirEl.textContent = '▲ HOME';
+    } else if (dir === 'away') {
+      dirEl.textContent = '▲ AWAY';
+    } else {
+      dirEl.textContent = '― WAIT';
+    }
+    labEl.textContent = sig.label || '等待信号';
+  }
+
+  // ── Match Cards ──
+  function renderMatches(matches) {
+    const container = document.getElementById('matches-container');
+    if (!matches || matches.length === 0) {
+      container.innerHTML = `<div class="empty"><div class="e-icon">♠</div><div class="e-text">NO MATCHES TRACKED YET</div></div>`;
       return;
     }
 
-    container.innerHTML = history.map(h => renderHistoryCard(h)).join('');
+    container.innerHTML = matches.map((m, idx) => buildMatchCard(m, idx)).join('');
   }
 
-  function renderHistoryCard(h) {
-    const settled = h.result && h.result.settled;
-    const handicaps = h.handicaps || [];
-    const winningKeys = new Set(
-      (h.result && h.result.winning_handicaps || []).map(w => w.home_handicap)
-    );
+  function buildMatchCard(m, idx) {
+    const rank = m.rank || (idx + 1);
+    const rankClass = rank <= 3 ? 'r' + rank : 'rn';
+    const cardClass = rank === 1 ? 'rank-1' : rank === 2 ? 'rank-2' : rank === 3 ? 'rank-3' : '';
+    const alertClass = m.alert ? 'has-alert' : '';
+    const sig = m.crayxus_signal || {};
+    const dir = sig.direction || 'neutral';
+    const mom = sig.momentum || 0;
 
-    const tableRows = handicaps.length > 0
-      ? handicaps.map(hc => {
-          const isWinner = winningKeys.has(hc.home_handicap);
-          const winInfo = settled
-            ? (h.result.winning_handicaps || []).find(w => w.home_handicap === hc.home_handicap)
-            : null;
-          const rowClass = winInfo
-            ? (winInfo.winner === 'home' ? 'winner-home' : winInfo.winner === 'away' ? 'winner-away' : 'winner-push')
-            : '';
-          const badge = winInfo
-            ? `<span class="win-badge ${winInfo.winner}">${winInfo.result}</span>`
-            : '';
-          return `<tr class="${rowClass}">
-            <td class="home-hc">${hc.home_handicap || '-'}</td>
-            <td>${hc.home_odds ? hc.home_odds.toFixed(3) : '-'}</td>
-            <td class="away-hc">${hc.away_handicap || '-'}</td>
-            <td>${hc.away_odds ? hc.away_odds.toFixed(3) : '-'}</td>
-            <td>${badge}</td>
-          </tr>`;
-        }).join('')
-      : `<tr><td colspan="5" class="no-bet365">${h.error || '未能抓取到赔率数据'}</td></tr>`;
+    const signalPillText = dir === 'home' ? '▲ HOME' : dir === 'away' ? '▲ AWAY' : '― HOLD';
+    const allRecords = m.all_records || [];
+    const recordsToShow = allRecords.slice(0, 12);
+    const hasMore = allRecords.length > 12;
 
-    const resultHtml = settled
-      ? `<div class="result-settled">
-          <span>比赛结果：</span>
-          <span class="result-score">${h.result.home_score} : ${h.result.away_score}</span>
-          <span style="color:var(--muted);font-size:13px">（${h.home} vs ${h.away}）</span>
-          <span style="color:var(--green);font-size:13px">✅ 已结算 · ${(h.result.winning_handicaps||[]).length} 个盘口胜出</span>
-        </div>`
-      : `<div class="result-form">
-          <label>输入比赛结果：</label>
-          <input type="number" id="hs_${h.match_key}" placeholder="主" min="0" max="20" style="width:55px">
-          <span class="score-sep">:</span>
-          <input type="number" id="as_${h.match_key}" placeholder="客" min="0" max="20" style="width:55px">
-          <button class="btn" onclick="submitResult('${h.match_key}', '${h.home}', '${h.away}')">✅ 确认结果</button>
+    const alertBadge = m.alert ? `<span class="alert-badge">⚠ ALERT</span>` : '';
+
+    const recordsHTML = recordsToShow.map(r => `
+      <tr class="${r.in_window ? 'in-window' : ''}">
+        <td style="color:var(--muted)">${r.time || '--'}</td>
+        <td class="odds-home">${r.home_odds ?? '--'}</td>
+        <td class="odds-hcap">${r.handicap || '--'}</td>
+        <td class="odds-away">${r.away_odds ?? '--'}</td>
+        <td class="${r.status === '即' ? 'status-ji' : 'status-zao'}">${r.status || '--'}</td>
+      </tr>
+    `).join('');
+
+    const moreBtn = hasMore ? `<button class="more-records-btn" onclick="showMoreRecords(event,'${m.match_id}')">+ ${allRecords.length - 12} MORE RECORDS</button>` : '';
+
+    // Bet365 section
+    let bet365HTML = '';
+    if (m.bet365_handicaps && m.bet365_handicaps.length > 0) {
+      const pills = m.bet365_handicaps.map(h => `
+        <div class="hcap-pill">
+          <div class="hp-line">${h.line || '--'}</div>
+          <div class="hp-odds">${h.home_odds || ''} / ${h.away_odds || ''}</div>
+        </div>
+      `).join('');
+      bet365HTML = `
+        <div class="bet365-section">
+          <div class="bet365-title">▶ BET365 ALT ASIAN HANDICAP</div>
+          <div class="hcap-grid">${pills}</div>
         </div>`;
-
-    const bet365Link = h.url
-      ? `<a href="${h.url}" target="_blank" style="color:var(--blue);font-size:12px;text-decoration:none">🔗 bet365链接</a>`
-      : `<span style="color:var(--muted);font-size:12px">暂无链接</span>`;
-
-    // bet365 链接输入框（未结算且无赔率数据时显示）
-    const urlInputHtml = !settled && handicaps.length === 0
-      ? `<div style="display:flex;align-items:center;gap:8px;margin-top:10px;padding-top:10px;border-top:1px solid var(--border);flex-wrap:wrap">
-          <label style="font-size:13px;color:var(--muted)">🔗 输入 bet365 比赛链接：</label>
-          <input type="text" id="url_${h.match_key}"
-            placeholder="https://www.bet365.com.au/#/AC/B1/C1/D8/E.../F3/I3/"
-            value="${h.bet365_url || ''}"
-            style="flex:1;min-width:200px;padding:5px 8px;background:#21262d;border:1px solid var(--border);border-radius:4px;color:var(--text);font-size:12px">
-          <button class="btn" onclick="saveBet365Url('${h.match_key}')">💾 保存链接</button>
-          <button class="btn primary" onclick="fetchBet365Now('${h.match_key}', '${h.home}', '${h.away}')">⚡ 立即抓取</button>
-        </div>`
-      : '';
+    }
 
     return `
-      <div class="history-card ${settled ? 'settled' : ''}">
-        <div class="history-header">
-          <div>
-            <div class="history-title">
-              ${settled ? '✅' : '🔥'} #1 热度 · ${h.league || ''} · ${h.home} vs ${h.away}
-            </div>
-            <div class="history-meta">
-              <span>📅 ${h.date || ''}</span>
-              <span>⏰ ${h.match_time || ''}</span>
-              <span>🔥 热度分: ${h.heat_score || 0} (${h.crow_record_count || 0}条 × ${h.time_weight || 1}x)</span>
-              <span>🕐 抓取: ${h.scraped_at || ''}</span>
-              ${bet365Link}
-            </div>
-          </div>
-          ${settled ? '<span class="badge ok">已结算</span>' : '<span class="badge no-data">待结算</span>'}
+    <div class="match-card ${cardClass} ${alertClass}" id="card-${m.match_id}">
+      <div class="match-header" onclick="toggleCard('${m.match_id}')">
+        <div class="rank-badge ${rankClass}">#${rank}</div>
+        <div class="match-teams">
+          <div class="teams-name">${m.home || '?'} <span style="color:var(--muted)">vs</span> ${m.away || '?'} ${alertBadge}</div>
+          <div class="teams-meta">[${m.league || '--'}] ${m.match_time || ''} | ${allRecords.length} records | ${m.minutes_to_kickoff != null ? m.minutes_to_kickoff + 'min to KO' : '--'}</div>
         </div>
-        <div class="history-body">
-          ${handicaps.length > 0 ? `
-          <table class="bet365-table">
+        <div class="momentum-mini">
+          <div class="momentum-mini-val">MOM ${mom}</div>
+          <div class="momentum-mini-track">
+            <div class="momentum-mini-fill" style="width:${mom}%"></div>
+          </div>
+        </div>
+        <div class="signal-pill ${dir}">${signalPillText}</div>
+        <div class="match-heat">
+          <div class="heat-score">${(m.heat_score || 0).toFixed(0)}</div>
+          <div class="heat-label">HEAT</div>
+        </div>
+        <div class="chevron" id="chev-${m.match_id}">▶</div>
+      </div>
+      <div class="match-body" id="body-${m.match_id}">
+        <!-- Signal Detail -->
+        <div class="signal-detail">
+          <div class="sd-item">
+            <div class="sd-k">DIRECTION</div>
+            <div class="sd-v ${dir === 'home' ? 'down' : dir === 'away' ? 'blue' : ''}">${sig.label || '等待'}</div>
+          </div>
+          <div class="sd-item">
+            <div class="sd-k">HOME CHANGE</div>
+            <div class="sd-v ${(sig.home_change||0) < 0 ? 'down' : 'up'}">${sig.home_change != null ? (sig.home_change > 0 ? '+' : '') + sig.home_change : '--'}</div>
+          </div>
+          <div class="sd-item">
+            <div class="sd-k">VELOCITY /hr</div>
+            <div class="sd-v">${sig.velocity ?? '--'}</div>
+          </div>
+          <div class="sd-item">
+            <div class="sd-k">UNIDIRECTIONAL</div>
+            <div class="sd-v ${sig.is_unidirectional ? 'down' : ''}">${sig.is_unidirectional ? '✓ YES' : '✗ NO'}</div>
+          </div>
+          <div class="sd-item">
+            <div class="sd-k">SAMPLES</div>
+            <div class="sd-v">${sig.sample_count ?? allRecords.length}</div>
+          </div>
+          <div class="sd-item">
+            <div class="sd-k">CROW RECORDS</div>
+            <div class="sd-v yellow">${m.crow_record_count || 0} × ${m.time_weight || 1}x</div>
+          </div>
+        </div>
+
+        <!-- Odds Table -->
+        <div class="table-wrap">
+          <table class="odds-table">
             <thead>
               <tr>
-                <th>${h.home || '主队'} 盘口</th>
-                <th>${h.home || '主队'} 赔率</th>
-                <th>${h.away || '客队'} 盘口</th>
-                <th>${h.away || '客队'} 赔率</th>
-                <th>结果</th>
+                <th>TIME</th>
+                <th>HOME ODDS</th>
+                <th>HANDICAP</th>
+                <th>AWAY ODDS</th>
+                <th>STATUS</th>
               </tr>
             </thead>
-            <tbody>${tableRows}</tbody>
-          </table>` : `<div class="no-bet365">${h.error || '未能抓取到赔率数据'}</div>`}
-          ${urlInputHtml}
-          ${resultHtml}
+            <tbody id="tbody-${m.match_id}">${recordsHTML}</tbody>
+          </table>
+          ${moreBtn}
         </div>
-      </div>`;
+
+        ${bet365HTML}
+      </div>
+    </div>`;
   }
 
-  async function submitResult(matchKey, home, away) {
-    const hsEl = document.getElementById(`hs_${matchKey}`);
-    const asEl = document.getElementById(`as_${matchKey}`);
-    const hs = parseInt(hsEl ? hsEl.value : '');
-    const as_ = parseInt(asEl ? asEl.value : '');
-
-    if (isNaN(hs) || isNaN(as_)) {
-      alert('请输入有效的比分（主队和客队进球数）');
-      return;
-    }
-
-    try {
-      const res = await fetch('/api/result', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ match_key: matchKey, home_score: hs, away_score: as_ })
-      });
-      const json = await res.json();
-      if (json.success) {
-        alert(`✅ 结果已更新！${home} ${hs}:${as_} ${away}\n胜出盘口数：${json.winning_handicaps ? json.winning_handicaps.length : 0}`);
-        loadHistory();
-      } else {
-        alert('更新失败：' + json.message);
-      }
-    } catch (e) {
-      alert('请求失败：' + e.message);
-    }
+  // ── Toggle card ──
+  function toggleCard(matchId) {
+    const body = document.getElementById('body-' + matchId);
+    const header = body.previousElementSibling;
+    const chev = document.getElementById('chev-' + matchId);
+    const isOpen = body.classList.contains('open');
+    body.classList.toggle('open', !isOpen);
+    header.classList.toggle('expanded', !isOpen);
+    chev.classList.toggle('open', !isOpen);
   }
 
-  // ── SSE 实时更新 ──
+  // ── Show more records ──
+  function showMoreRecords(e, matchId) {
+    e.stopPropagation();
+    if (!allData) return;
+    const match = allData.matches.find(m => m.match_id === matchId);
+    if (!match) return;
+    const tbody = document.getElementById('tbody-' + matchId);
+    const allRecords = match.all_records || [];
+    tbody.innerHTML = allRecords.map(r => `
+      <tr class="${r.in_window ? 'in-window' : ''}">
+        <td style="color:var(--muted)">${r.time || '--'}</td>
+        <td class="odds-home">${r.home_odds ?? '--'}</td>
+        <td class="odds-hcap">${r.handicap || '--'}</td>
+        <td class="odds-away">${r.away_odds ?? '--'}</td>
+        <td class="${r.status === '即' ? 'status-ji' : 'status-zao'}">${r.status || '--'}</td>
+      </tr>
+    `).join('');
+    e.target.remove();
+  }
+
+  // ── SSE ──
   function connectSSE() {
-    const es = new EventSource('/api/stream');
-    es.onmessage = (e) => {
-      try {
-        const payload = JSON.parse(e.data);
-        updateUI({ ...payload.data, scan_status: payload.status });
-      } catch (err) {
-        console.error('SSE 解析失败:', err);
-      }
+    const evtSource = new EventSource('/api/stream');
+    evtSource.onopen = () => {
+      document.getElementById('live-indicator').className = 'live-dot';
+      document.getElementById('live-indicator').textContent = 'LIVE';
     };
-    es.onerror = () => {
-      console.warn('SSE 断开，5秒后重连...');
-      es.close();
+    evtSource.onmessage = (e) => {
+      try {
+        const data = JSON.parse(e.data);
+        if (data.type === 'update') {
+          allData = data;
+          renderAll(data);
+          toast('数据已更新', 'ok');
+        } else if (data.type === 'alert') {
+          toast(`⚠ ALERT: ${data.match} - ${data.reason}`, 'alert');
+        }
+      } catch(err) {}
+    };
+    evtSource.onerror = () => {
+      document.getElementById('live-indicator').className = 'live-dot offline';
+      document.getElementById('live-indicator').textContent = 'RECONNECTING';
+      evtSource.close();
       setTimeout(connectSSE, 5000);
     };
   }
 
-  // ── 保存 bet365 链接 ──
-  async function saveBet365Url(matchKey) {
-    const input = document.getElementById(`url_${matchKey}`);
-    const url = input ? input.value.trim() : '';
-    if (!url) { alert('请输入 bet365 链接'); return; }
-
-    try {
-      const res = await fetch('/api/history/set_url', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ match_key: matchKey, bet365_url: url })
-      });
-      const json = await res.json();
-      if (json.success) {
-        alert('✅ 链接已保存！下次扫描时将自动抓取赔率。');
-        loadHistory();
-      } else {
-        alert('保存失败：' + json.message);
-      }
-    } catch (e) {
-      alert('请求失败：' + e.message);
-    }
-  }
-
-  // ── 立即抓取 bet365 赔率 ──
-  async function fetchBet365Now(matchKey, home, away) {
-    const input = document.getElementById(`url_${matchKey}`);
-    const url = input ? input.value.trim() : '';
-    if (!url) { alert('请先输入 bet365 比赛链接'); return; }
-
-    const btn = event.target;
-    btn.disabled = true;
-    btn.textContent = '⏳ 抓取中...';
-
-    try {
-      const res = await fetch('/api/history/fetch_now', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ match_key: matchKey, home, away, bet365_url: url })
-      });
-      const json = await res.json();
-      if (json.success) {
-        alert(`✅ 抓取成功！获取到 ${json.handicap_count} 个盘口赔率`);
-        loadHistory();
-      } else {
-        alert('抓取失败：' + json.message);
-      }
-    } catch (e) {
-      alert('请求失败：' + e.message);
-    } finally {
-      btn.disabled = false;
-      btn.textContent = '⚡ 立即抓取';
-    }
-  }
-
-  // ── 初始化 ──
-  loadData();
+  // ── Init ──
+  refreshData();
   connectSSE();
-  loadHistory();
-
-  // 每30秒轮询一次（作为 SSE 的备份）
-  setInterval(loadData, 30000);
-  // 每2分钟刷新历史记录
-  setInterval(loadHistory, 120000);
+  setInterval(refreshData, 60000);
 </script>
 </body>
 </html>

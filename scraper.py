@@ -1077,239 +1077,186 @@ def save_bet365_history(record: dict, filepath: str = None):
 
 
 # ─────────────────────────────────────────────
-# 6. 主扫描函数
+# Crayxus 动量信号引擎
 # ─────────────────────────────────────────────
-async def scan_all_matches() -> list[dict]:
+def compute_momentum_signal(records: list) -> dict:
     """
-    完整扫描流程：
-    1. 从 sporttery.cn 获取当天竞彩比赛（8-10场）
-    2. 按联赛权重排序，选取前3场
-    3. 从 titan007 获取比赛ID（通过球队名匹配）
-    4. 对每场比赛抓取 Crow* 亚让赔率详情
-    5. 只有"即"状态记录才触发报警
+    计算主力资金方向信号（Crayxus Smart Money Signal）
+    输入: all_records (时间序列盘口赔率列表)
+    输出: {direction, momentum(0-100), velocity, is_unidirectional, label}
     """
-    results = []
+    if not records or len(records) < 2:
+        return {"direction": "neutral", "momentum": 0, "label": "数据不足", "home_change": 0, "away_change": 0}
 
-    async with async_playwright() as p:
-        browser = await p.chromium.launch(
-            headless=True,
-            args=["--no-sandbox", "--disable-setuid-sandbox"]
-        )
-        context = await browser.new_context(
-            user_agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
-            locale="zh-CN"
-        )
+    from datetime import datetime, timedelta
 
-        # Step 1: 获取 sporttery 当天比赛列表
-        sporttery_page = await context.new_page()
-        sporttery_matches = await fetch_sporttery_today_matches(sporttery_page)
-        await sporttery_page.close()
+    now = datetime.now()
+    cutoff = now - timedelta(hours=2)
 
-        if not sporttery_matches:
-            logger.warning("未获取到 sporttery 当天比赛")
-            await browser.close()
-            return results
+    # 解析并排序记录（时间正序）
+    parsed = []
+    for rec in records:
+        try:
+            dt = datetime.strptime(rec["_rec_dt"], "%Y-%m-%d %H:%M:%S")
+            h_o = rec.get("home_odds", 0) or 0
+            a_o = rec.get("away_odds", 0) or 0
+            if h_o > 0 and a_o > 0:
+                parsed.append((dt, h_o, a_o))
+        except Exception:
+            pass
 
-        # Step 2: 获取 titan007 比赛ID（先获取所有ID，用于后续匹配）
-        titan_page = await context.new_page()
-        titan_matches = await fetch_titan007_match_ids(titan_page)
-        await titan_page.close()
+    if len(parsed) < 2:
+        return {"direction": "neutral", "momentum": 0, "label": "赔率数据缺失", "home_change": 0, "away_change": 0}
 
-        # Step 3: 为所有 sporttery 比赛匹配 titan007 ID
-        matched_matches = []
-        for match in sporttery_matches:
-            match_id = find_titan007_match_id(match["home"], match["away"], titan_matches)
-            if match_id:
-                match["match_id"] = match_id
-                matched_matches.append(match)
-            else:
-                logger.debug(f"未找到 {match['home']} vs {match['away']} 的titan007 ID，跳过")
+    parsed.sort(key=lambda x: x[0])
 
-        logger.info(f"成功匹配 {len(matched_matches)}/{len(sporttery_matches)} 场比赛到titan007")
+    # 优先取最近2小时，不足则取全部
+    recent = [p for p in parsed if p[0] >= cutoff]
+    if len(recent) < 2:
+        recent = parsed[-min(15, len(parsed)):]
 
-        if not matched_matches:
-            logger.warning("没有任何比赛匹配到titan007 ID")
-            await browser.close()
-            return results
+    home_odds_seq = [p[1] for p in recent]
+    away_odds_seq = [p[2] for p in recent]
 
-        # Step 4: 热度探针 —— 并发获取每场比赛的 Crow* 记录数
-        logger.info(f"开始热度探针，共 {len(matched_matches)} 场比赛...")
-        probe_tasks = []
-        for match in matched_matches:
-            probe_tasks.append(fetch_crow_record_count(context, match["match_id"]))
+    home_change = home_odds_seq[-1] - home_odds_seq[0]
+    away_change = away_odds_seq[-1] - away_odds_seq[0]
 
-        # 并发执行（最多5个并发，避免被封）
-        record_counts = []
-        batch_size = 5
-        for i in range(0, len(probe_tasks), batch_size):
-            batch = probe_tasks[i:i+batch_size]
-            batch_results = await asyncio.gather(*batch, return_exceptions=True)
-            for r in batch_results:
-                record_counts.append(r if isinstance(r, int) else 0)
-            if i + batch_size < len(probe_tasks):
-                await asyncio.sleep(1)
+    # 计算反转次数（震荡 vs 单向）
+    reversals = 0
+    trend = home_change
+    for i in range(1, len(home_odds_seq)):
+        delta = home_odds_seq[i] - home_odds_seq[i-1]
+        if trend < 0 and delta > 0.01:
+            reversals += 1
+        elif trend > 0 and delta < -0.01:
+            reversals += 1
 
-        # 将记录数写回比赛数据
-        for match, cnt in zip(matched_matches, record_counts):
-            match["crow_record_count"] = cnt
-            logger.info(f"  [{match['league']}] {match['home']} vs {match['away']}: Crow*记录数={cnt}")
+    is_unidirectional = reversals <= 1
 
-        # Step 5: 计算时间加权热度分，按分数降序排列，选取前 TOP_N_MATCHES 场
-        # 热度分 = Crow*记录数 × 时间权重
-        # 时间权重规则：距开赛越远，权重越高（早期盘口变化更有价值）
-        #   距开赛 > 6小时：权重 = 3.0（早盘，变化最有参考价值）
-        #   距开赛 3~6小时：权重 = 2.0
-        #   距开赛 1~3小时：权重 = 1.5
-        #   距开赛 < 1小时：权重 = 1.0（临场，变化频繁但噪音多）
-        now = datetime.now()
-        from datetime import timedelta
+    # 时间跨度
+    time_span_h = max((recent[-1][0] - recent[0][0]).total_seconds() / 3600, 0.01)
+    velocity = round(abs(home_change) / time_span_h, 3)
 
-        for match in matched_matches:
-            mt = match.get("match_time", "")
-            kickoff_parts = mt.replace("\n", " ").replace("|", " ").split()
-            kickoff_time_str = kickoff_parts[-1] if kickoff_parts else ""
-            time_weight = 1.0
-            try:
-                ko_h, ko_m = map(int, kickoff_time_str.split(":"))
-                ko_dt = now.replace(hour=ko_h, minute=ko_m, second=0, microsecond=0)
-                if ko_dt < now - timedelta(hours=2):
-                    ko_dt += timedelta(days=1)
-                minutes_to_ko = (ko_dt - now).total_seconds() / 60
-                if minutes_to_ko > 360:      # > 6小时
-                    time_weight = 3.0
-                elif minutes_to_ko > 180:    # 3~6小时
-                    time_weight = 2.0
-                elif minutes_to_ko > 60:     # 1~3小时
-                    time_weight = 1.5
-                else:                        # < 1小时
-                    time_weight = 1.0
-                match["minutes_to_kickoff"] = round(minutes_to_ko, 0)
-            except Exception:
-                match["minutes_to_kickoff"] = None
+    # 动量分 (0-100)
+    magnitude = abs(home_change)
+    momentum = min(100, int(
+        magnitude * 250
+        + (15 if is_unidirectional else 0)
+        + min(len(recent), 20) * 1.5
+    ))
 
-            match["time_weight"] = time_weight
-            raw_count = match.get("crow_record_count", 0)
-            match["heat_score"] = round(raw_count * time_weight, 1)
+    # 方向判定
+    THRESHOLD = 0.05
+    if home_change < -THRESHOLD:
+        direction = "home"
+        label = f"🔴 主队水位↓{abs(home_change):.2f} 资金压主"
+    elif away_change < -THRESHOLD:
+        direction = "away"
+        label = f"🔵 客队水位↓{abs(away_change):.2f} 资金压客"
+    else:
+        direction = "neutral"
+        label = f"↔️ 震荡中 变幅{abs(home_change):.2f}"
 
-        # 过滤掉开赛前 1 分钟内的比赛（停止记录）
-        matched_matches = [
-            m for m in matched_matches 
-            if m.get("minutes_to_kickoff") is None or m.get("minutes_to_kickoff") >= 1
-        ]
+    if is_unidirectional and magnitude > 0.10:
+        label += " ⚡单向暴跌"
 
-        matched_matches.sort(key=lambda m: m.get("heat_score", 0), reverse=True)
-        top_matches = matched_matches[:TOP_N_MATCHES]
-
-        logger.info(f"\n🔥 热度TOP{TOP_N_MATCHES}（按时间加权热度分排序）：")
-        for i, m in enumerate(top_matches, 1):
-            logger.info(f"  #{i} [{m['league']}] {m['home']} vs {m['away']} "
-                        f"(Crow*记录数:{m.get('crow_record_count',0)}, "
-                        f"时间权重:{m.get('time_weight',1.0)}x, "
-                        f"热度分:{m.get('heat_score',0)}, "
-                        f"距开赛:{m.get('minutes_to_kickoff','?')}分钟, "
-                        f"编号:{m['match_num']})")
-
-        # Step 6: 对 TOP3 进行完整扫描
-        for idx, match in enumerate(top_matches):
-            home = match["home"]
-            away = match["away"]
-            match_id = match["match_id"]
-
-            logger.info(f"完整扫描: {home} vs {away} (ID: {match_id})")
-
-            # 提取开赛时间（格式 "HH:MM"），传给 fetch_crow_detail 做40分钟窗口判断
-            mt = match.get("match_time", "")
-            kickoff_time = mt.replace("\n", " ").replace("|", " ").split()
-            kickoff_time = kickoff_time[-1] if kickoff_time else ""
-
-            result = await fetch_crow_detail(context, match_id, home, away,
-                                             match_kickoff=kickoff_time)
-            result["league"] = match["league"]
-            result["match_time"] = match["match_time"]
-            result["match_num"] = match["match_num"]
-            result["crow_record_count"] = match.get("crow_record_count", 0)
-            result["heat_score"] = match.get("heat_score", 0)
-            result["time_weight"] = match.get("time_weight", 1.0)
-            result["rank"] = idx + 1  # 热度排名
-            results.append(result)
-
-            await asyncio.sleep(1.5)
-
-        # Step 7: 对热度第一名抓取 bet365 Alternative Asian Handicap 赔率
-        # 注意：需要在 bet365_history.json 中预先设置 bet365_url 才能抓取
-        if top_matches:
-            top1 = top_matches[0]
-            logger.info(f"\n📊 抓取热度第一名的 bet365 赔率: {top1['home']} vs {top1['away']}")
-
-            # 检查是否有预设的 bet365 链接（从历史记录中读取）
-            bet365_url = ""
-            history_file = os.path.join(os.path.dirname(os.path.abspath(__file__)), "bet365_history.json")
-            if os.path.exists(history_file):
-                try:
-                    with open(history_file, "r", encoding="utf-8") as f:
-                        history = json.load(f)
-                    today = datetime.now().strftime("%Y-%m-%d")
-                    match_key = f"{today}_{top1['home']}_{top1['away']}"
-                    for h in history:
-                        if h.get("match_key") == match_key and h.get("bet365_url"):
-                            bet365_url = h["bet365_url"]
-                            logger.info(f"找到预设 bet365 链接: {bet365_url}")
-                            break
-                except:
-                    pass
-
-            bet365_data = await fetch_bet365_asian_handicap(context, top1["home"], top1["away"], bet365_url)
-            bet365_data["league"] = top1.get("league", "")
-            bet365_data["match_time"] = top1.get("match_time", "")
-            bet365_data["heat_score"] = top1.get("heat_score", 0)
-            bet365_data["crow_record_count"] = top1.get("crow_record_count", 0)
-            bet365_data["time_weight"] = top1.get("time_weight", 1.0)
-
-            if bet365_data.get("found") or bet365_data.get("handicaps"):
-                save_bet365_history(bet365_data)
-                logger.info(f"✅ bet365 赔率已保存到历史记录")
-            else:
-                logger.warning(f"⚠️ bet365 未能抓取到赔率: {bet365_data.get('error','')}")
-                # 即使没抓到也保存记录（方便追踪）
-                save_bet365_history(bet365_data)
-
-        await browser.close()
-
-    return results
+    return {
+        "direction": direction,
+        "momentum": momentum,
+        "velocity": velocity,
+        "is_unidirectional": is_unidirectional,
+        "home_change": round(home_change, 3),
+        "away_change": round(away_change, 3),
+        "sample_count": len(recent),
+        "label": label
+    }
 
 
 # ─────────────────────────────────────────────
-# 6. 保存结果到 JSON 文件
+# 6. 保存结果到 JSON 文件（Upsert 模式）
 # ─────────────────────────────────────────────
-def save_results(results: list[dict], filepath: str = None):
+def save_results(results: list, filepath: str = None):
+    """
+    Upsert 模式：all_records 只追加不覆盖，直到开赛前1分钟停止记录。
+    同时计算 Crayxus 动量信号。
+    """
     if filepath is None:
         filepath = os.path.join(os.path.dirname(os.path.abspath(__file__)), "data.json")
-    
-    # 尝试加载已有数据进行合并，保留历史记录
+
+    from datetime import datetime, timedelta
+
     existing_data = {}
     if os.path.exists(filepath):
         try:
             with open(filepath, "r", encoding="utf-8") as f:
                 old_data = json.load(f)
-                for m in old_data.get("matches", []):
-                    # 以 match_id 作为键保存已有比赛数据
-                    if "match_id" in m:
-                        existing_data[m["match_id"]] = m
+            for m in old_data.get("matches", []):
+                if "match_id" in m:
+                    existing_data[m["match_id"]] = m
         except Exception as e:
             logger.error(f"合并历史数据失败，将重新创建: {e}")
 
-    # 用新的抓取结果覆盖已有的对应比赛
-    for r in results:
-        if "match_id" in r:
-            existing_data[r["match_id"]] = r
+    now = datetime.now()
 
-    # 按照热度分排序并生成最终的 matches 列表
+    for r in results:
+        mid = r.get("match_id")
+        if not mid:
+            continue
+
+        # 开赛前1分钟停止记录
+        minutes_to_ko = r.get("minutes_to_kickoff")
+        if minutes_to_ko is not None and minutes_to_ko < 1:
+            logger.info(f"⏱️ {r.get('home')} vs {r.get('away')} 开赛前1分钟，停止记录")
+            continue
+
+        if mid in existing_data:
+            old = existing_data[mid]
+
+            # ★ 核心：追加 all_records，不覆盖
+            old_records = old.get("all_records", [])
+            new_records = r.get("all_records", [])
+            existing_dts = {rec.get("_rec_dt") for rec in old_records}
+            appended = 0
+            for rec in new_records:
+                if rec.get("_rec_dt") not in existing_dts:
+                    old_records.append(rec)
+                    existing_dts.add(rec.get("_rec_dt"))
+                    appended += 1
+
+            # 按时间倒序排列
+            old_records.sort(key=lambda x: x.get("_rec_dt", ""), reverse=True)
+            old["all_records"] = old_records
+
+            # 更新元数据字段
+            for key in ["heat_score", "crow_record_count", "time_weight", "rank",
+                        "minutes_to_kickoff", "alert", "alert_reason", "max_change",
+                        "league", "match_time", "match_num"]:
+                if key in r:
+                    old[key] = r[key]
+
+            # 计算 Crayxus 动量信号
+            old["crayxus_signal"] = compute_momentum_signal(old_records)
+            existing_data[mid] = old
+            if appended > 0:
+                logger.info(f"📈 {r.get('home')} vs {r.get('away')}: 追加 {appended} 条新记录，共 {len(old_records)} 条")
+        else:
+            # 新比赛
+            r["crayxus_signal"] = compute_momentum_signal(r.get("all_records", []))
+            existing_data[mid] = r
+
+    # 清理：移除超过48小时的老比赛
+    cutoff_old = (now - timedelta(hours=48)).strftime("%Y-%m-%d %H:%M:%S")
+    before_count = len(existing_data)
+    existing_data = {
+        k: v for k, v in existing_data.items()
+        if v.get("last_updated", v.get("match_time", "9999")) > cutoff_old
+        or v.get("minutes_to_kickoff", 999) > -120  # 开赛后2小时内还保留
+    }
+    if len(existing_data) < before_count:
+        logger.info(f"🧹 清理了 {before_count - len(existing_data)} 场过期比赛")
+
     final_matches = list(existing_data.values())
     final_matches.sort(key=lambda x: x.get("heat_score", 0), reverse=True)
-
-    # 简单的数据清理：只保留今天（或最近12小时内更新过的，或者只是限制总数比如保留当天的50场）
-    # 这里我们简化处理，由于每天的 match_id 都不同，可以保留所有合并后的结果，
-    # 也可以限制最大保留最近的 30 场比赛。
     final_matches = final_matches[:50]
 
     data = {
@@ -1320,7 +1267,8 @@ def save_results(results: list[dict], filepath: str = None):
     }
     with open(filepath, "w", encoding="utf-8") as f:
         json.dump(data, f, ensure_ascii=False, indent=2)
-    logger.info(f"结果已合并保存到 {filepath}，当前共 {len(final_matches)} 场比赛记录")
+    logger.info(f"✅ 数据已 Upsert 保存，当前共 {len(final_matches)} 场比赛")
+
 
 
 if __name__ == "__main__":
