@@ -529,6 +529,153 @@
       gap: 24px;
     }
 
+    /* ── BET365 SNIPER SECTION ── */
+    .bet365-sniper {
+      margin-top: 16px;
+      background: var(--bg2);
+      border: 1px solid var(--border2);
+      border-radius: 8px;
+      padding: 14px 18px;
+    }
+    .bet365-sniper-title {
+      font-size: 10px;
+      color: var(--orange);
+      letter-spacing: 3px;
+      text-transform: uppercase;
+      margin-bottom: 14px;
+    }
+
+    /* URL input row */
+    .b365-url-row {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 14px;
+    }
+    .b365-url-input {
+      flex: 1;
+      background: var(--bg);
+      border: 1px solid var(--border2);
+      border-radius: 6px;
+      padding: 8px 12px;
+      color: var(--text);
+      font-family: inherit;
+      font-size: 11px;
+      letter-spacing: 0.5px;
+    }
+    .b365-url-input:focus { outline: none; border-color: var(--orange); }
+    .b365-url-input::placeholder { color: var(--muted); }
+    .b365-fetch-btn {
+      padding: 8px 18px;
+      background: rgba(250,179,135,0.08);
+      border: 1px solid rgba(250,179,135,0.5);
+      border-radius: 6px;
+      color: var(--orange);
+      font-family: inherit;
+      font-size: 11px;
+      letter-spacing: 1px;
+      cursor: pointer;
+      white-space: nowrap;
+      transition: all 0.15s;
+    }
+    .b365-fetch-btn:hover { background: rgba(250,179,135,0.18); box-shadow: 0 0 10px rgba(250,179,135,0.2); }
+    .b365-fetch-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+    /* Sniper Target box */
+    .sniper-target {
+      background: linear-gradient(135deg, rgba(250,179,135,0.06), rgba(243,139,168,0.04));
+      border: 1px solid rgba(250,179,135,0.35);
+      border-radius: 8px;
+      padding: 16px 20px;
+      margin-bottom: 14px;
+      display: flex;
+      align-items: center;
+      gap: 24px;
+    }
+    .sniper-target.waiting {
+      border-style: dashed;
+      border-color: var(--border2);
+      justify-content: center;
+      padding: 18px;
+    }
+    .st-badge {
+      font-size: 9px;
+      color: var(--orange);
+      letter-spacing: 3px;
+      text-transform: uppercase;
+      margin-bottom: 6px;
+    }
+    .st-line {
+      font-size: 20px;
+      font-weight: 700;
+      color: var(--yellow);
+      letter-spacing: 1px;
+    }
+    .st-bet {
+      font-size: 12px;
+      font-weight: 600;
+      margin-top: 4px;
+      letter-spacing: 1px;
+    }
+    .st-bet.home { color: var(--red); }
+    .st-bet.away { color: var(--blue); }
+    .st-basis {
+      font-size: 11px;
+      color: var(--muted);
+      line-height: 1.7;
+    }
+    .st-odds-block {
+      margin-left: auto;
+      text-align: right;
+    }
+    .st-odds-label { font-size: 10px; color: var(--muted); letter-spacing: 2px; margin-bottom: 4px; }
+    .st-odds-val {
+      font-size: 30px;
+      font-weight: 700;
+      color: var(--text);
+    }
+    .st-odds-val.value-good { color: var(--green); }
+    .st-odds-val.value-ok   { color: var(--yellow); }
+    .st-stars { font-size: 12px; color: var(--orange); margin-top: 2px; }
+
+    /* All lines table */
+    .hcap-table-wrap { overflow-x: auto; }
+    .hcap-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 12px;
+    }
+    .hcap-table th {
+      background: var(--bg);
+      color: var(--muted);
+      font-size: 10px;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      padding: 6px 12px;
+      text-align: left;
+      border-bottom: 1px solid var(--border);
+    }
+    .hcap-table td {
+      padding: 6px 12px;
+      border-bottom: 1px solid rgba(30,37,56,0.4);
+    }
+    .hcap-table tr:last-child td { border-bottom: none; }
+    .hcap-table tr:hover td { background: rgba(255,255,255,0.015); }
+    .hcap-table tr.target-row td { background: rgba(250,179,135,0.07); }
+    .hcap-table tr.target-row td:first-child { border-left: 2px solid var(--orange); }
+    .hcap-table .hc-neg { color: var(--red); font-weight: 600; }
+    .hcap-table .hc-pos { color: var(--blue); font-weight: 600; }
+    .target-tag {
+      font-size: 9px;
+      padding: 1px 5px;
+      background: rgba(250,179,135,0.18);
+      border: 1px solid var(--orange);
+      border-radius: 3px;
+      color: var(--orange);
+      letter-spacing: 1px;
+      margin-left: 6px;
+      vertical-align: middle;
+    }
+
     /* scrollbar */
     ::-webkit-scrollbar { width: 6px; height: 6px; }
     ::-webkit-scrollbar-track { background: var(--bg); }
@@ -794,21 +941,7 @@
 
     const moreBtn = hasMore ? `<button class="more-records-btn" onclick="showMoreRecords(event,'${m.match_id}')">+ ${allRecords.length - 12} MORE RECORDS</button>` : '';
 
-    // Bet365 section
-    let bet365HTML = '';
-    if (m.bet365_handicaps && m.bet365_handicaps.length > 0) {
-      const pills = m.bet365_handicaps.map(h => `
-        <div class="hcap-pill">
-          <div class="hp-line">${h.line || '--'}</div>
-          <div class="hp-odds">${h.home_odds || ''} / ${h.away_odds || ''}</div>
-        </div>
-      `).join('');
-      bet365HTML = `
-        <div class="bet365-section">
-          <div class="bet365-title">▶ BET365 ALT ASIAN HANDICAP</div>
-          <div class="hcap-grid">${pills}</div>
-        </div>`;
-    }
+    const bet365HTML = buildBet365Section(m);
 
     return `
     <div class="match-card ${cardClass} ${alertClass}" id="card-${m.match_id}">
@@ -911,6 +1044,172 @@
       </tr>
     `).join('');
     e.target.remove();
+  }
+
+  // ── Bet365 Sniper Logic ──
+
+  // 根据 Crow* 信号方向 + Crow* 当前主线，从 bet365 备选盘口找最佳价值盘
+  function findSniperLine(handicaps, direction, crowHcStr) {
+    if (!handicaps || handicaps.length === 0 || direction === 'neutral') return null;
+
+    // 解析 Crow* 当前主线数值（取第一个数字）
+    let crowHc = 0;
+    if (crowHcStr) {
+      const m = crowHcStr.match(/[-+]?\d+\.?\d*/);
+      if (m) crowHc = parseFloat(m[0]);
+    }
+
+    let best = null, bestScore = -Infinity;
+
+    for (const h of handicaps) {
+      const odds = parseFloat(direction === 'away' ? h.away_odds : h.home_odds) || 0;
+      const hcStr = direction === 'away' ? h.away_handicap : h.home_handicap;
+      const m2 = (hcStr || '').match(/[-+]?\d+\.?\d*/);
+      const hcNum = m2 ? parseFloat(m2[0]) : 0;
+
+      // 只考虑赔率合理范围
+      if (odds < 1.72 || odds > 2.15) continue;
+
+      // 评分：距最优赔率1.90近 + 距Crow*主线近
+      const oddsDist = Math.abs(odds - 1.90);
+      const hcDist = Math.abs(hcNum - crowHc);
+      const score = 10 - oddsDist * 4 - hcDist * 1.5;
+
+      if (score > bestScore) { bestScore = score; best = { ...h, _odds: odds, _hcNum: hcNum }; }
+    }
+    return best;
+  }
+
+  // 构建 bet365 section HTML（含 URL 输入 + sniper target + 全部盘口表）
+  function buildBet365Section(m) {
+    const matchId = m.match_id;
+    const handicaps = m.bet365_handicaps || [];
+    const sig = m.crayxus_signal || {};
+    const dir = sig.direction || 'neutral';
+    const allRec = m.all_records || [];
+
+    // 最新 Crow* 主线（最后一条记录）
+    const latestRec = allRec.length > 0 ? allRec[allRec.length - 1] : {};
+    const crowHc = latestRec.handicap || '';
+
+    const sniperLine = findSniperLine(handicaps, dir, crowHc);
+
+    // ── Sniper Target box ──
+    let targetHTML = '';
+    if (sniperLine) {
+      const odds = sniperLine._odds;
+      const hcap = dir === 'away' ? sniperLine.away_handicap : sniperLine.home_handicap;
+      const valueClass = odds >= 1.88 && odds <= 1.96 ? 'value-good' : 'value-ok';
+      const stars = odds >= 1.88 && odds <= 1.96 ? '★★★' : odds >= 1.82 ? '★★☆' : '★☆☆';
+      targetHTML = `
+        <div class="sniper-target">
+          <div>
+            <div class="st-badge">⚡ SNIPER TARGET</div>
+            <div class="st-line">${hcap}</div>
+            <div class="st-bet ${dir}">BET ${dir.toUpperCase()}</div>
+          </div>
+          <div class="st-basis">
+            <div>信号: ${sig.label || dir}</div>
+            <div>Crow* 主线: ${crowHc || '--'}</div>
+            <div>动量: ${sig.momentum || 0}</div>
+          </div>
+          <div class="st-odds-block">
+            <div class="st-odds-label">ODDS</div>
+            <div class="st-odds-val ${valueClass}">${odds.toFixed(3)}</div>
+            <div class="st-stars">${stars}</div>
+          </div>
+        </div>`;
+    } else if (handicaps.length > 0) {
+      const reason = dir === 'neutral' ? '等待 Crow* 方向信号...' : '当前无价值盘口（赔率超出合理范围）';
+      targetHTML = `<div class="sniper-target waiting"><span style="font-size:11px;color:var(--muted);letter-spacing:1px">${reason}</span></div>`;
+    } else {
+      targetHTML = `<div class="sniper-target waiting"><span style="font-size:11px;color:var(--muted);letter-spacing:1px">⚡ 输入 BET365 链接解锁 SNIPER TARGET</span></div>`;
+    }
+
+    // ── 全部盘口表 ──
+    let tableHTML = '';
+    if (handicaps.length > 0) {
+      const rows = handicaps.map(h => {
+        const isTarget = sniperLine && h === sniperLine;
+        const homeTag = (isTarget && dir === 'home') ? `<span class="target-tag">TARGET</span>` : '';
+        const awayTag = (isTarget && dir === 'away') ? `<span class="target-tag">TARGET</span>` : '';
+        return `
+          <tr class="${isTarget ? 'target-row' : ''}">
+            <td class="hc-neg">${h.home_handicap || '--'}</td>
+            <td>${h.home_odds || '--'}${homeTag}</td>
+            <td class="hc-pos">${h.away_handicap || '--'}</td>
+            <td>${h.away_odds || '--'}${awayTag}</td>
+          </tr>`;
+      }).join('');
+      tableHTML = `
+        <div class="hcap-table-wrap">
+          <table class="hcap-table">
+            <thead><tr>
+              <th>主队盘口</th><th>主队赔率</th>
+              <th>客队盘口</th><th>客队赔率</th>
+            </tr></thead>
+            <tbody>${rows}</tbody>
+          </table>
+        </div>`;
+    }
+
+    const existingUrl = m.bet365_url || '';
+    return `
+      <div class="bet365-sniper" id="b365section-${matchId}">
+        <div class="bet365-sniper-title">▶ BET365 // SNIPER ANALYSIS</div>
+        ${targetHTML}
+        <div class="b365-url-row">
+          <input class="b365-url-input" id="b365url-${matchId}" type="text"
+            placeholder="https://www.bet365.com.au/#/AC/B1/C1/D8/..."
+            value="${existingUrl}">
+          <button class="b365-fetch-btn" id="b365btn-${matchId}"
+            onclick="fetchBet365('${matchId}')">⚡ FETCH</button>
+        </div>
+        ${tableHTML}
+      </div>`;
+  }
+
+  // 触发 bet365 抓取
+  async function fetchBet365(matchId) {
+    const input = document.getElementById('b365url-' + matchId);
+    const btn   = document.getElementById('b365btn-' + matchId);
+    const url   = input ? input.value.trim() : '';
+    if (!url) { toast('请先输入 bet365 比赛直链', 'alert'); return; }
+
+    const match = allData && allData.matches
+      ? allData.matches.find(m => m.match_id === matchId) : null;
+    if (!match) { toast('找不到比赛数据', 'alert'); return; }
+
+    btn.disabled = true;
+    btn.textContent = 'FETCHING...';
+
+    try {
+      const resp = await fetch('/api/bet365/fetch_direct', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ match_id: matchId, bet365_url: url, home: match.home || '', away: match.away || '' })
+      });
+      const data = await resp.json();
+
+      if (data.success && data.handicaps && data.handicaps.length > 0) {
+        match.bet365_handicaps = data.handicaps;
+        match.bet365_url = url;
+        // 重渲染 bet365 区域
+        const section = document.getElementById('b365section-' + matchId);
+        if (section) {
+          section.outerHTML = buildBet365Section(match);
+        }
+        toast(`✓ 抓取成功，${data.handicaps.length} 个盘口`, 'ok');
+      } else {
+        toast(data.error || data.message || '抓取失败，请检查链接', 'alert');
+        btn.disabled = false;
+        btn.textContent = '⚡ FETCH';
+      }
+    } catch (e) {
+      toast('抓取失败: ' + e.message, 'alert');
+      btn.disabled = false;
+      btn.textContent = '⚡ FETCH';
+    }
   }
 
   // ── SSE ──

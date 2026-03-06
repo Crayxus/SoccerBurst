@@ -326,6 +326,55 @@ def api_history_fetch_now():
         return jsonify({"success": False, "message": str(e)}), 500
 
 
+@app.route("/api/bet365/fetch_direct", methods=["POST"])
+def api_bet365_fetch_direct():
+    """直接抓取 bet365 赔率并更新 data.json（本地模式，无需历史记录）"""
+    try:
+        req_data = request.get_json()
+        bet365_url = req_data.get("bet365_url", "").strip()
+        home = req_data.get("home", "")
+        away = req_data.get("away", "")
+        match_id = req_data.get("match_id", "")
+
+        if not bet365_url:
+            return jsonify({"success": False, "message": "缺少 bet365_url"}), 400
+
+        from scraper import fetch_bet365_asian_handicap_drission, DRISSION_AVAILABLE
+        if not DRISSION_AVAILABLE:
+            return jsonify({"success": False, "message": "DrissionPage 未安装，bet365抓取仅支持本地模式（运行 pip install DrissionPage）"}), 500
+
+        logger.info(f"直接抓取 bet365: {home} vs {away} -> {bet365_url}")
+        result = fetch_bet365_asian_handicap_drission(bet365_url, home, away)
+
+        handicaps = result.get("handicaps", [])
+        success = result.get("found", False) or len(handicaps) > 0
+
+        # 如果提供了 match_id，同步更新 data.json
+        if match_id and success:
+            try:
+                data_content = load_data()
+                for m in data_content.get("matches", []):
+                    if m.get("match_id") == match_id:
+                        m["bet365_handicaps"] = handicaps
+                        m["bet365_url"] = bet365_url
+                        break
+                with open(DATA_FILE, "w", encoding="utf-8") as f:
+                    json.dump(data_content, f, ensure_ascii=False, indent=2)
+            except Exception as e:
+                logger.warning(f"更新data.json失败: {e}")
+
+        return jsonify({
+            "success": success,
+            "handicaps": handicaps,
+            "scraped_at": result.get("scraped_at", ""),
+            "error": result.get("error", "")
+        })
+
+    except Exception as e:
+        logger.error(f"直接抓取bet365失败: {e}")
+        return jsonify({"success": False, "message": str(e)}), 500
+
+
 @app.route("/api/result", methods=["POST"])
 def api_result():
     """
