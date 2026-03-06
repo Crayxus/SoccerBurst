@@ -250,6 +250,20 @@
 
     .result-label { font-size: 11px; color: var(--muted); }
 
+    /* ── PREDICTION TABLE ── */
+    .pred-table { width: 100%; border-collapse: collapse; font-size: 11px; margin-top: 12px; }
+    .pred-table th {
+      font-size: 10px; color: var(--muted); letter-spacing: 1px;
+      padding: 6px 8px; border-bottom: 1px solid var(--border); text-align: left;
+    }
+    .pred-table td { padding: 6px 8px; border-bottom: 1px solid rgba(30,37,56,0.5); }
+    .pred-table tr.pivot-row td { border-top: 1px dashed var(--purple); border-bottom: 1px dashed var(--purple); }
+    .pred-win  { color: var(--green); }
+    .pred-lose { color: var(--muted); }
+    .pred-best td { background: rgba(249,226,175,0.05) !important; }
+    .star { color: var(--yellow); margin-left: 4px; }
+    .pivot-label { font-size: 9px; color: var(--purple); margin-left: 4px; letter-spacing: 1px; }
+
     /* ── EMPTY / ERROR ── */
     .empty {
       text-align: center;
@@ -294,6 +308,12 @@
   <div id="match-content">
     <div class="empty">加载中...</div>
   </div>
+</div>
+
+<!-- PREDICTION TABLE -->
+<div class="card" id="card-pred" style="display:none">
+  <div class="card-label" id="pred-label">PREDICTED WINNING LINES</div>
+  <div id="pred-content"></div>
 </div>
 
 <!-- FACTORS -->
@@ -365,10 +385,12 @@
       currentDirection = d.direction;
 
       renderMatch(d);
+      renderPredTable(d);
       renderFactors(d.factors, d.direction);
       renderHistory(d.history, d.stats);
       renderWeights(d.weights_used);
 
+      document.getElementById('card-pred').style.display     = 'block';
       document.getElementById('card-factors').style.display  = 'block';
       document.getElementById('card-result').style.display   = 'block';
       document.getElementById('card-history').style.display  = 'block';
@@ -412,6 +434,57 @@
         </div>
       </div>
     `;
+  }
+
+  function renderPredTable(d) {
+    const lines     = d.predicted_lines || [];
+    const direction = d.direction;
+    const pivot     = d.crow_pivot;
+    const winCount  = d.predicted_win_count || 0;
+    const total     = d.total_lines || 0;
+    const best      = d.best_line || {};
+
+    document.getElementById('pred-label').textContent =
+      `PREDICTED WINNING LINES  —  ${winCount} / ${total} 条预测出线  |  Crow* 主线 ${d.factors?.line_compression?.latest_hc || ''}`;
+
+    if (!lines.length) {
+      document.getElementById('pred-content').innerHTML =
+        '<div style="font-size:11px;color:var(--muted)">暂无 bet365 盘口数据</div>';
+      return;
+    }
+
+    const rows = lines.map(line => {
+      const hp = line.home_predicted;
+      const ap = line.away_predicted;
+      const hb = line.home_best_value;
+      const ab = line.away_best_value;
+      const isPivot = Math.abs(line.home_numeric - pivot) < 0.01;
+      const isBestRow = (direction === 'home' && line.home_handicap === best.handicap) ||
+                        (direction === 'away' && line.away_handicap === best.handicap);
+
+      const hStar  = hb ? '<span class="star">★</span>' : '';
+      const aStar  = ab ? '<span class="star">★</span>' : '';
+      const pivLbl = isPivot ? '<span class="pivot-label">PIVOT</span>' : '';
+
+      return `<tr class="${isBestRow ? 'pred-best' : ''} ${isPivot ? 'pivot-row' : ''}">
+        <td class="${hp ? 'pred-win' : 'pred-lose'}">${hp ? '✓' : '·'} ${line.home_handicap}${hStar}</td>
+        <td class="${hp ? 'pred-win' : 'pred-lose'}">${line.home_odds}</td>
+        <td class="${ap ? 'pred-win' : 'pred-lose'}">${ap ? '✓' : '·'} ${line.away_handicap}${aStar}${pivLbl}</td>
+        <td class="${ap ? 'pred-win' : 'pred-lose'}">${line.away_odds}</td>
+      </tr>`;
+    }).join('');
+
+    document.getElementById('pred-content').innerHTML = `
+      <table class="pred-table">
+        <thead><tr>
+          <th>${d.home} 盘口</th><th>赔率</th>
+          <th>${d.away} 盘口</th><th>赔率</th>
+        </tr></thead>
+        <tbody>${rows}</tbody>
+      </table>
+      <div style="font-size:10px;color:var(--muted);margin-top:8px">
+        ✓ 预测出线 &nbsp;·&nbsp; 暗色=预测不出 &nbsp;·&nbsp; ★ 最佳价值盘口
+      </div>`;
   }
 
   function renderFactors(f, direction) {

@@ -192,51 +192,151 @@ def analyze_match(match_data: dict, bet365_lines: list, weights: dict = None) ->
 
     confidence = min(int((s_compression + s_magnitude + s_alignment + s_drift) * 100), 95)
 
-    # ── 最佳 bet365 盘口 ─────────────────────────────────────
-    best_line = pick_best_line(bet365_lines, bet_direction)
+    # ── 预测全部盘口 & 最佳线 ────────────────────────────────
+    predicted_lines = predict_winning_lines(bet365_lines, bet_direction, latest_hc)
+    best_line       = pick_best_line(bet365_lines, bet_direction, latest_hc)
+    crow_pivot      = crow_hc_to_numeric(latest_hc)
+
+    win_count  = sum(1 for p in predicted_lines if
+                     (bet_direction == "home" and p["home_predicted"]) or
+                     (bet_direction == "away" and p["away_predicted"]))
 
     return {
-        "home":           home,
-        "away":           away,
-        "direction":      bet_direction,
-        "direction_team": home if bet_direction == "home" else away,
-        "signal_type":    signal_type,
-        "best_line":      best_line,
-        "confidence":     confidence,
-        "factors":        factors,
-        "weights_used":   weights,
-        "analyzed_at":    datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+        "home":             home,
+        "away":             away,
+        "direction":        bet_direction,
+        "direction_team":   home if bet_direction == "home" else away,
+        "signal_type":      signal_type,
+        "best_line":        best_line,
+        "confidence":       confidence,
+        "factors":          factors,
+        "weights_used":     weights,
+        "predicted_lines":  predicted_lines,
+        "crow_pivot":       crow_pivot,
+        "predicted_win_count": win_count,
+        "total_lines":      len(predicted_lines),
+        "analyzed_at":      datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
     }
 
 
-def pick_best_line(bet365_lines: list, direction: str) -> dict:
+CROW_HC_NUMERIC = {
+    "受让两球":      2.0,
+    "受让球半/两球":  1.75,
+    "受让球半":      1.5,
+    "受让半球/一球":  0.75,
+    "受让半球":      0.5,
+    "受让平手/半球":  0.25,
+    "受让平手":      0.0,
+    "平手":         0.0,
+    "平手/半球":    -0.25,
+    "半球":        -0.5,
+    "半球/一球":   -0.75,
+    "一球":        -1.0,
+    "一球/球半":   -1.25,
+    "球半":        -1.5,
+    "球半/两球":   -1.75,
+    "两球":        -2.0,
+}
+
+
+def crow_hc_to_numeric(hc_str: str) -> float:
+    """Crow* 盘口字符串 → 数值（主队视角，正数=主队受让，负数=主队让球）"""
+    for key, val in CROW_HC_NUMERIC.items():
+        if key in hc_str or hc_str in key:
+            return val
+    return 0.0
+
+
+def bet365_hc_to_numeric(hc_str: str) -> float:
     """
-    从 bet365 盘口中找最佳投注线
-    甜蜜点：赔率 1.75 ~ 2.20（风险收益平衡）
+    bet365 盘口字符串 → 数值（主队视角）
+    '0.0, +0.5' → 0.25,  '+1.0' → 1.0,  '-0.5, -1.0' → -0.75
     """
+    import re
+    nums = re.findall(r'[+-]?\d+\.?\d*', hc_str)
+    if not nums:
+        return 0.0
+    vals = [float(n) for n in nums[:2]]
+    return sum(vals) / len(vals)
+
+
+def predict_winning_lines(bet365_lines: list, direction: str, crow_hc: str) -> list:
+    """
+    对每条 bet365 盘口线打 PREDICTED WIN / LOSE 标签
+
+    原理：
+    - Crow* 主线是市场分水岭（约 50/50）
+    - 信号方向那侧：主队数值 >= 分水岭 = 预测赢（如果信号是主队）
+    - 预测赢的线赔率越高越有价值（距分水岭越近赔率越高）
+    """
+    pivot = crow_hc_to_numeric(crow_hc)
+    result = []
+
+    for line in bet365_lines:
+        home_hc_str  = line.get("home_handicap", "")
+        away_hc_str  = line.get("away_handicap", "")
+        home_odds    = line.get("home_odds", 0)
+        away_odds    = line.get("away_odds", 0)
+        home_numeric = bet365_hc_to_numeric(home_hc_str)
+
+        # 信号是主队：home_numeric >= pivot → 主队这条线预测赢
+        # 信号是客队：home_numeric <  pivot → 客队这条线预测赢
+        if direction == "home":
+            home_predicted = home_numeric >= pivot
+            away_predicted = not home_predicted
+        else:
+            away_predicted = home_numeric < pivot
+            home_predicted = not away_predicted
+
+        # 最佳价值：预测赢 + 赔率在甜蜜点 1.75-2.20
+        home_value = home_predicted and (1.75 <= home_odds <= 2.20)
+        away_value = away_predicted and (1.75 <= away_odds <= 2.20)
+
+        result.append({
+            "home_handicap": home_hc_str,
+            "home_odds":     home_odds,
+            "away_handicap": away_hc_str,
+            "away_odds":     away_odds,
+            "home_numeric":  home_numeric,
+            "home_predicted": home_predicted,
+            "away_predicted": away_predicted,
+            "home_best_value": home_value,
+            "away_best_value": away_value,
+        })
+
+    # 按主队数值从大到小排列（受让多 → 让多）
+    result.sort(key=lambda x: x["home_numeric"], reverse=True)
+    return result
+
+
+def pick_best_line(bet365_lines: list, direction: str, crow_hc: str = "") -> dict:
+    """从预测赢的线里选赔率最接近甜蜜点的那条"""
+    predictions = predict_winning_lines(bet365_lines, direction, crow_hc)
+
     best       = None
     best_score = -1
 
-    for line in bet365_lines:
-        if direction == "home":
-            odds = line.get("home_odds", 0)
-            hc   = line.get("home_handicap", "")
+    for p in predictions:
+        if direction == "home" and p["home_predicted"]:
+            odds = p["home_odds"]
+            hc   = p["home_handicap"]
+        elif direction == "away" and p["away_predicted"]:
+            odds = p["away_odds"]
+            hc   = p["away_handicap"]
         else:
-            odds = line.get("away_odds", 0)
-            hc   = line.get("away_handicap", "")
+            continue
 
         if not odds or odds <= 1.0:
             continue
 
-        # 甜蜜点评分（确保甜蜜点始终优先于高赔率）
         if 1.75 <= odds <= 2.20:
-            score = odds              # 1.75 ~ 2.20
+            score = odds
         elif 1.60 <= odds < 1.75:
-            score = odds * 0.75      # 最高 1.31，低于甜蜜点下限
+            score = odds * 0.75
         elif 2.20 < odds <= 2.50:
-            score = odds * 0.60      # 最高 1.50，低于甜蜜点下限
+            score = odds * 0.60
         else:
-            score = odds * 0.15      # 极低，排除高赔率异常盘
+            score = odds * 0.15
 
         if score > best_score:
             best_score = score
