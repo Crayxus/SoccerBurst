@@ -310,6 +310,18 @@
   </div>
 </div>
 
+<!-- BET365 FETCH -->
+<div class="card" id="card-fetch" style="display:none">
+  <div class="card-label">BET365 // FETCH ODDS</div>
+  <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+    <input id="bet365-url" type="text" placeholder="粘贴 bet365 比赛链接..."
+      style="flex:1;background:var(--bg);border:1px solid var(--border);color:var(--text);
+             font-family:inherit;font-size:12px;padding:9px 12px;border-radius:4px;min-width:200px"/>
+    <button class="btn" onclick="fetchBet365()" id="fetch-btn">FETCH</button>
+    <span id="fetch-msg" style="font-size:11px;color:var(--green)"></span>
+  </div>
+</div>
+
 <!-- PREDICTION TABLE -->
 <div class="card" id="card-pred" style="display:none">
   <div class="card-label" id="pred-label">PREDICTED WINNING LINES</div>
@@ -390,6 +402,7 @@
       renderHistory(d.history, d.stats);
       renderWeights(d.weights_used);
 
+      document.getElementById('card-fetch').style.display    = 'block';
       document.getElementById('card-pred').style.display     = 'block';
       document.getElementById('card-factors').style.display  = 'block';
       document.getElementById('card-result').style.display   = 'block';
@@ -647,6 +660,47 @@
 
   function setStatus(msg) {
     document.getElementById('status-msg').textContent = msg;
+  }
+
+  async function fetchBet365() {
+    const url = document.getElementById('bet365-url').value.trim();
+    if (!url) { document.getElementById('fetch-msg').textContent = '请粘贴链接'; return; }
+    if (!signalData) { document.getElementById('fetch-msg').textContent = '请先等待信号加载'; return; }
+
+    const btn = document.getElementById('fetch-btn');
+    btn.textContent = '抓取中...';
+    btn.disabled = true;
+    document.getElementById('fetch-msg').textContent = '';
+
+    try {
+      const r = await fetch('/api/bet365/fetch_direct', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({
+          bet365_url: url,
+          home:       signalData.home || '',
+          away:       signalData.away || '',
+          match_id:   signalData.match_id || '',
+        }),
+      });
+      const d = await r.json();
+
+      if (d.success) {
+        const cnt = (d.handicaps || []).length;
+        document.getElementById('fetch-msg').textContent = `已抓取 ${cnt} 个盘口`;
+        document.getElementById('fetch-msg').style.color = 'var(--green)';
+        setTimeout(loadSignal, 800);  // 刷新信号
+      } else {
+        document.getElementById('fetch-msg').textContent = d.message || d.error || '抓取失败';
+        document.getElementById('fetch-msg').style.color = 'var(--red)';
+      }
+    } catch(e) {
+      document.getElementById('fetch-msg').textContent = '请求失败: ' + e.message;
+      document.getElementById('fetch-msg').style.color = 'var(--red)';
+    } finally {
+      btn.textContent = 'FETCH';
+      btn.disabled = false;
+    }
   }
 
   async function loadPatterns() {
