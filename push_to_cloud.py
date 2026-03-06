@@ -121,6 +121,78 @@ def push_data_to_cloud(data: dict) -> bool:
         return False
 
 
+def push_signal_to_cloud(data: dict) -> bool:
+    """本地计算今日信号并推送到 Render（Render 直接显示，不用自己算）"""
+    try:
+        from analyzer import analyze_match, load_history, get_stats
+
+        matches = data.get("matches", [])
+
+        # 找热度最高且有 bet365 数据的比赛
+        target = None
+        for m in sorted(matches, key=lambda x: x.get("heat_score", 0), reverse=True):
+            if m.get("bet365_handicaps") and m.get("all_records"):
+                target = m
+                break
+        if not target:
+            for m in sorted(matches, key=lambda x: x.get("heat_score", 0), reverse=True):
+                if m.get("all_records"):
+                    target = m
+                    break
+
+        if not target:
+            logger.info("无可分析比赛，跳过信号推送")
+            return True
+
+        bet365_lines = target.get("bet365_handicaps", [])
+        if not bet365_lines:
+            bet365_lines = [{"home_handicap": "待抓取", "home_odds": 0,
+                             "away_handicap": "--", "away_odds": 0}]
+
+        signal = analyze_match(target, bet365_lines)
+        if "error" in signal:
+            logger.warning(f"信号计算失败: {signal['error']}")
+            return False
+
+        # 补充比赛元信息
+        date_str  = data.get("last_updated", "")[:10]
+        match_key = f"{date_str}_{target.get('home')}_{target.get('away')}"
+        signal.update({
+            "match_key":  match_key,
+            "match_id":   target.get("match_id", ""),
+            "league":     target.get("league", ""),
+            "match_time": target.get("match_time", ""),
+            "heat_score": target.get("heat_score", 0),
+            "has_bet365": bool(target.get("bet365_handicaps")),
+        })
+
+        # 附带历史统计
+        history = load_history()
+        signal["stats"]   = get_stats(history)
+        signal["history"] = list(reversed(history[-10:]))
+
+        # 推送到 Render
+        url     = f"{RENDER_URL.rstrip('/')}/api/push_signal"
+        payload = json.dumps(signal, ensure_ascii=False).encode("utf-8")
+        req = urllib.request.Request(url, data=payload, method="POST", headers={
+            "Content-Type": "application/json; charset=utf-8",
+            "X-Push-Secret": PUSH_SECRET,
+        })
+        with urllib.request.urlopen(req, timeout=30) as resp:
+            result = json.loads(resp.read().decode("utf-8"))
+            if result.get("success"):
+                logger.info(f"✅ 信号推送成功: {signal.get('direction_team')} "
+                            f"{signal.get('best_line', {}).get('handicap','')} "
+                            f"@ {signal.get('best_line', {}).get('odds','')}")
+                return True
+            else:
+                logger.warning(f"信号推送失败: {result.get('message')}")
+                return False
+    except Exception as e:
+        logger.error(f"push_signal_to_cloud 失败: {e}")
+        return False
+
+
 async def scan_and_push():
     """扫描并推送数据"""
     logger.info("=" * 50)
@@ -184,6 +256,9 @@ async def scan_and_push():
         # 推送到云端
         logger.info(f"推送数据到 {RENDER_URL}...")
         push_data_to_cloud(data)
+
+        # 本地计算信号并推送（Render 直接显示，不用自己算）
+        push_signal_to_cloud(data)
 
         # 同步推送 bet365 历史记录到云端
         push_bet365_history_to_cloud()

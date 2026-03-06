@@ -17,7 +17,11 @@ import os
 import re
 import logging
 from datetime import datetime
-from playwright.async_api import async_playwright
+try:
+    from playwright.async_api import async_playwright
+    PLAYWRIGHT_AVAILABLE = True
+except ImportError:
+    PLAYWRIGHT_AVAILABLE = False
 
 # DrissionPage 用于 bet365 抓取（绕过反爬）
 try:

@@ -1,0 +1,386 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>CRAYXUS // ODDS HISTORY</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700&display=swap');
+
+    :root {
+      --bg:     #060810;
+      --card:   #0c0f1a;
+      --border: #1e2538;
+      --text:   #cdd6f4;
+      --muted:  #4a5273;
+      --green:  #a6e3a1;
+      --red:    #f38ba8;
+      --yellow: #f9e2af;
+      --blue:   #89b4fa;
+      --purple: #cba6f7;
+      --orange: #fab387;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'JetBrains Mono', monospace;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 32px 16px;
+    }
+
+    .header {
+      width: 100%;
+      max-width: 860px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 28px;
+    }
+    .logo { font-size: 13px; font-weight: 700; color: var(--purple); letter-spacing: 3px; }
+    .back-btn {
+      font-size: 11px;
+      color: var(--blue);
+      text-decoration: none;
+      border: 1px solid var(--blue);
+      padding: 6px 12px;
+      border-radius: 4px;
+      transition: background 0.2s;
+    }
+    .back-btn:hover { background: rgba(137,180,250,0.1); }
+
+    .filter-bar {
+      width: 100%;
+      max-width: 860px;
+      display: flex;
+      gap: 8px;
+      margin-bottom: 16px;
+      flex-wrap: wrap;
+      align-items: center;
+    }
+    .filter-bar input, .filter-bar select {
+      background: var(--card);
+      border: 1px solid var(--border);
+      color: var(--text);
+      font-family: inherit;
+      font-size: 11px;
+      padding: 7px 10px;
+      border-radius: 4px;
+    }
+    .filter-bar input { flex: 1; min-width: 140px; }
+    .total-label { font-size: 11px; color: var(--muted); margin-left: auto; }
+
+    .match-card {
+      width: 100%;
+      max-width: 860px;
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      margin-bottom: 12px;
+      overflow: hidden;
+    }
+    .match-card.has-odds { border-color: #1e3050; }
+    .match-card.no-odds  { opacity: 0.45; }
+
+    .match-header {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 14px 20px;
+      cursor: pointer;
+      user-select: none;
+    }
+    .match-header:hover { background: rgba(255,255,255,0.02); }
+
+    .match-date  { font-size: 11px; color: var(--muted); min-width: 70px; }
+    .match-teams { font-size: 14px; font-weight: 600; flex: 1; }
+    .match-teams .vs { color: var(--muted); font-size: 11px; font-weight: 400; margin: 0 6px; }
+    .match-badge {
+      font-size: 10px;
+      padding: 3px 8px;
+      border-radius: 3px;
+      letter-spacing: 1px;
+    }
+    .badge-fetched { background: rgba(166,227,161,0.12); color: var(--green); border: 1px solid rgba(166,227,161,0.3); }
+    .badge-empty   { background: rgba(74,82,115,0.2);    color: var(--muted); border: 1px solid var(--border); }
+    .badge-result  { background: rgba(249,226,175,0.1);  color: var(--yellow); border: 1px solid rgba(249,226,175,0.3); font-size: 9px; }
+
+    .match-count { font-size: 11px; color: var(--muted); min-width: 60px; text-align: right; }
+    .toggle-icon { font-size: 10px; color: var(--muted); min-width: 16px; }
+
+    /* Odds table */
+    .odds-body { display: none; padding: 0 20px 16px; }
+    .odds-body.open { display: block; }
+
+    .scraped-at { font-size: 10px; color: var(--muted); margin-bottom: 12px; }
+
+    .odds-table { width: 100%; border-collapse: collapse; font-size: 11px; }
+    .odds-table th {
+      font-size: 10px; color: var(--muted); letter-spacing: 1px;
+      padding: 6px 8px; border-bottom: 1px solid var(--border); text-align: left;
+    }
+    .odds-table td { padding: 6px 8px; border-bottom: 1px solid rgba(30,37,56,0.5); }
+    .odds-table tr:last-child td { border-bottom: none; }
+    .home-hc { color: var(--green); }
+    .away-hc { color: var(--orange); }
+    .odds-val { color: var(--yellow); font-weight: 600; }
+
+    /* Result section */
+    .result-section {
+      margin-top: 14px;
+      padding-top: 12px;
+      border-top: 1px solid var(--border);
+    }
+    .result-label { font-size: 10px; color: var(--muted); letter-spacing: 1px; margin-bottom: 8px; }
+    .result-form  { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+    .result-form input {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      color: var(--text);
+      font-family: inherit;
+      font-size: 13px;
+      padding: 6px 10px;
+      border-radius: 4px;
+      width: 55px;
+      text-align: center;
+    }
+    .result-form input:focus { outline: none; border-color: var(--purple); }
+    .btn {
+      background: transparent;
+      border: 1px solid var(--purple);
+      color: var(--purple);
+      font-family: inherit;
+      font-size: 10px;
+      letter-spacing: 1px;
+      padding: 6px 14px;
+      border-radius: 4px;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    .btn:hover { background: rgba(203,166,247,0.1); }
+    .result-display { font-size: 11px; color: var(--yellow); }
+
+    /* Win/loss highlighting */
+    .win-row td { background: rgba(166,227,161,0.06) !important; }
+    .loss-row td { background: rgba(243,139,168,0.04) !important; }
+
+    .empty-state {
+      width: 100%;
+      max-width: 860px;
+      text-align: center;
+      padding: 60px;
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .status-bar {
+      width: 100%;
+      max-width: 860px;
+      font-size: 10px;
+      color: var(--muted);
+      padding: 8px 0;
+      text-align: right;
+    }
+  </style>
+</head>
+<body>
+
+<div class="header">
+  <div class="logo">CRAYXUS // ODDS HISTORY</div>
+  <a href="/" class="back-btn">← BACK</a>
+</div>
+
+<div class="filter-bar">
+  <input type="text" id="search-input" placeholder="搜索球队名..." oninput="filterMatches()" />
+  <select id="filter-select" onchange="filterMatches()">
+    <option value="all">全部</option>
+    <option value="fetched">已抓取盘口</option>
+    <option value="settled">已结算</option>
+  </select>
+  <span class="total-label" id="total-label">加载中...</span>
+</div>
+
+<div id="list-container">
+  <div class="empty-state">加载中...</div>
+</div>
+
+<div class="status-bar" id="status-bar"></div>
+
+<script>
+  let allHistory = [];
+
+  async function load() {
+    try {
+      const r = await fetch('/api/history');
+      const d = await r.json();
+      allHistory = d.history || [];
+      renderAll(allHistory);
+      document.getElementById('status-bar').textContent =
+        `共 ${allHistory.length} 条记录  |  上次更新: ${new Date().toLocaleTimeString()}`;
+    } catch(e) {
+      document.getElementById('list-container').innerHTML =
+        `<div class="empty-state">加载失败: ${e.message}</div>`;
+    }
+  }
+
+  function filterMatches() {
+    const q      = document.getElementById('search-input').value.toLowerCase();
+    const filter = document.getElementById('filter-select').value;
+
+    let list = allHistory.filter(r => {
+      const teams = `${r.home} ${r.away}`.toLowerCase();
+      if (q && !teams.includes(q)) return false;
+      if (filter === 'fetched'  && !(r.handicaps && r.handicaps.length)) return false;
+      if (filter === 'settled'  && !(r.result && r.result.settled)) return false;
+      return true;
+    });
+    renderAll(list);
+  }
+
+  function renderAll(list) {
+    document.getElementById('total-label').textContent = `${list.length} 条`;
+    if (!list.length) {
+      document.getElementById('list-container').innerHTML =
+        '<div class="empty-state">暂无记录</div>';
+      return;
+    }
+    document.getElementById('list-container').innerHTML = list.map(renderCard).join('');
+  }
+
+  function renderCard(rec) {
+    const hasOdds  = rec.handicaps && rec.handicaps.length > 0;
+    const settled  = rec.result && rec.result.settled;
+    const cardCls  = hasOdds ? 'match-card has-odds' : 'match-card no-odds';
+    const badge    = hasOdds
+      ? `<span class="match-badge badge-fetched">${rec.handicaps.length} 盘口</span>`
+      : `<span class="match-badge badge-empty">未抓取</span>`;
+    const resultBadge = settled
+      ? `<span class="match-badge badge-result">${rec.result.home_score}:${rec.result.away_score}</span>`
+      : '';
+
+    const id = `card_${rec.match_key.replace(/[^a-zA-Z0-9]/g, '_')}`;
+
+    return `
+      <div class="${cardCls}" id="${id}">
+        <div class="match-header" onclick="toggle('${id}')">
+          <div class="match-date">${rec.date || ''}</div>
+          <div class="match-teams">
+            <span>${rec.home}</span>
+            <span class="vs">vs</span>
+            <span>${rec.away}</span>
+          </div>
+          ${badge}
+          ${resultBadge}
+          <div class="toggle-icon" id="${id}_icon">▶</div>
+        </div>
+        <div class="odds-body" id="${id}_body">
+          ${hasOdds ? renderOddsTable(rec) : '<div style="font-size:11px;color:var(--muted);padding-bottom:4px">暂无盘口数据，请在主页 FETCH</div>'}
+          ${hasOdds ? renderResultSection(rec) : ''}
+        </div>
+      </div>`;
+  }
+
+  function renderOddsTable(rec) {
+    const settled = rec.result && rec.result.settled;
+    const wins    = (rec.result && rec.result.winning_handicaps) || [];
+    const winHcs  = wins.map(w => w.home_handicap);
+
+    const rows = rec.handicaps.map(h => {
+      const isWin   = winHcs.includes(h.home_handicap);
+      const rowCls  = settled ? (isWin ? 'win-row' : 'loss-row') : '';
+      return `<tr class="${rowCls}">
+        <td class="home-hc">${h.home_handicap}</td>
+        <td class="odds-val">${h.home_odds}</td>
+        <td class="away-hc">${h.away_handicap}</td>
+        <td class="odds-val">${h.away_odds}</td>
+      </tr>`;
+    }).join('');
+
+    return `
+      <div class="scraped-at">抓取时间: ${rec.scraped_at || '--'}</div>
+      <table class="odds-table">
+        <thead><tr>
+          <th>${rec.home} 盘口</th><th>赔率</th>
+          <th>${rec.away} 盘口</th><th>赔率</th>
+        </tr></thead>
+        <tbody>${rows}</tbody>
+      </table>`;
+  }
+
+  function renderResultSection(rec) {
+    const settled = rec.result && rec.result.settled;
+    const mk = rec.match_key;
+
+    if (settled) {
+      const wins = (rec.result.winning_handicaps || []);
+      const winText = wins.length
+        ? wins.map(w => `${w.home_handicap} ${w.result}`).join(' / ')
+        : '无出线盘口';
+      return `
+        <div class="result-section">
+          <div class="result-label">RESULT</div>
+          <div class="result-display">
+            ${rec.result.home_score} : ${rec.result.away_score}
+            &nbsp;|&nbsp; ${winText}
+          </div>
+        </div>`;
+    }
+
+    return `
+      <div class="result-section">
+        <div class="result-label">RECORD RESULT</div>
+        <div class="result-form">
+          <span style="font-size:11px;color:var(--muted)">${rec.home}</span>
+          <input type="number" id="h_${mk}" placeholder="0" min="0" max="20" style="width:50px"/>
+          <span style="font-size:11px;color:var(--muted)">:</span>
+          <input type="number" id="a_${mk}" placeholder="0" min="0" max="20" style="width:50px"/>
+          <span style="font-size:11px;color:var(--muted)">${rec.away}</span>
+          <button class="btn" onclick="submitResult('${mk}')">CONFIRM</button>
+          <span id="msg_${mk}" style="font-size:11px;color:var(--green)"></span>
+        </div>
+      </div>`;
+  }
+
+  function toggle(id) {
+    const body = document.getElementById(id + '_body');
+    const icon = document.getElementById(id + '_icon');
+    const open = body.classList.toggle('open');
+    icon.textContent = open ? '▼' : '▶';
+  }
+
+  async function submitResult(matchKey) {
+    const h = parseInt(document.getElementById('h_' + matchKey).value);
+    const a = parseInt(document.getElementById('a_' + matchKey).value);
+    const msgEl = document.getElementById('msg_' + matchKey);
+
+    if (isNaN(h) || isNaN(a)) { msgEl.textContent = '请输入比分'; return; }
+
+    try {
+      const r = await fetch('/api/result', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({ match_key: matchKey, home_score: h, away_score: a }),
+      });
+      const d = await r.json();
+      if (d.success) {
+        msgEl.textContent = `已保存 ${h}:${a}`;
+        setTimeout(load, 800);
+      } else {
+        msgEl.textContent = d.message || '失败';
+        msgEl.style.color = 'var(--red)';
+      }
+    } catch(e) {
+      msgEl.textContent = '请求失败';
+      msgEl.style.color = 'var(--red)';
+    }
+  }
+
+  load();
+</script>
+</body>
+</html>

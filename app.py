@@ -54,6 +54,32 @@ scan_status = {
 }
 
 
+def _force_push_to_render(data: dict):
+    """强制推送到 Render（用于手动 FETCH，不判断 MODE）"""
+    url = f"{RENDER_URL.rstrip('/')}/api/push"
+    # Render 免费版可能休眠，先发一个 GET 唤醒，再推数据
+    try:
+        wake_req = urllib.request.Request(f"{RENDER_URL.rstrip('/')}/api/status")
+        urllib.request.urlopen(wake_req, timeout=60)  # 等待唤醒（最多60秒）
+        logger.info("Render 已唤醒，开始推送数据...")
+    except Exception:
+        pass  # 唤醒失败也继续推送
+    try:
+        payload = json.dumps(data, ensure_ascii=False).encode("utf-8")
+        req = urllib.request.Request(url, data=payload, method="POST", headers={
+            "Content-Type": "application/json; charset=utf-8",
+            "X-Push-Secret": PUSH_SECRET,
+        })
+        with urllib.request.urlopen(req, timeout=60) as resp:
+            result = json.loads(resp.read().decode("utf-8"))
+            if result.get("success"):
+                logger.info(f"✅ FETCH数据已强制推送到云端: {result.get('message')}")
+            else:
+                logger.warning(f"云端推送失败: {result.get('message')}")
+    except Exception as e:
+        logger.warning(f"强制推送云端异常（非致命）: {e}")
+
+
 def _push_data_to_render(data: dict):
     """将 data.json 内容立即推送到 Render 云端（后台调用）"""
     if MODE != "local":
@@ -190,6 +216,27 @@ def api_push():
         return jsonify({"success": False, "message": str(e)}), 500
 
 
+@app.route("/api/push_signal", methods=["POST"])
+def api_push_signal():
+    """接收本地计算好的信号结果，直接存储供页面展示"""
+    secret = request.headers.get("X-Push-Secret", "")
+    if secret != PUSH_SECRET:
+        return jsonify({"success": False, "message": "Invalid secret"}), 403
+    try:
+        signal = request.get_json()
+        if not signal:
+            return jsonify({"success": False, "message": "No data"}), 400
+        with open(PUSHED_SIGNAL_FILE, "w", encoding="utf-8") as f:
+            json.dump(signal, f, ensure_ascii=False, indent=2)
+        logger.info(f"收到推送信号: {signal.get('direction_team')} "
+                    f"{signal.get('best_line', {}).get('handicap','')} "
+                    f"@ {signal.get('best_line', {}).get('odds','')}")
+        return jsonify({"success": True, "message": "Signal received"})
+    except Exception as e:
+        logger.error(f"处理推送信号失败: {e}")
+        return jsonify({"success": False, "message": str(e)}), 500
+
+
 @app.route("/api/scan", methods=["POST"])
 def api_scan():
     """手动触发扫描（仅本地模式有效）"""
@@ -212,7 +259,8 @@ def api_status():
 # ─────────────────────────────────────────────
 # bet365 历史记录接口
 # ─────────────────────────────────────────────
-BET365_HISTORY_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), "bet365_history.json")
+BET365_HISTORY_FILE  = os.path.join(os.path.dirname(os.path.abspath(__file__)), "bet365_history.json")
+PUSHED_SIGNAL_FILE   = os.path.join(os.path.dirname(os.path.abspath(__file__)), "pushed_signal.json")
 
 
 def load_bet365_history() -> list:
@@ -225,13 +273,103 @@ def load_bet365_history() -> list:
     return []
 
 
+SIGNAL_HISTORY_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), "signal_history.json")
+
+
+def _save_to_bet365_history(match_key: str, home: str, away: str,
+                             bet365_url: str, handicaps: list, scraped_at: str, match_id: str = ""):
+    """将 FETCH 到的盘口数据保存/更新到 bet365_history.json（历史记录页面专用）"""
+    try:
+        history = []
+        if os.path.exists(BET365_HISTORY_FILE):
+            with open(BET365_HISTORY_FILE, "r", encoding="utf-8") as f:
+                history = json.load(f)
+
+        # 查找同 match_key 的记录并更新，否则新增
+        for rec in history:
+            if rec.get("match_key") == match_key:
+                rec["handicaps"]   = handicaps
+                rec["bet365_url"]  = bet365_url
+                rec["url"]         = bet365_url
+                rec["found"]       = True
+                rec["scraped_at"]  = scraped_at
+                rec["error"]       = ""
+                break
+        else:
+            date_str = match_key[:10]
+            history.append({
+                "match_key":  match_key,
+                "date":       date_str,
+                "home":       home,
+                "away":       away,
+                "bet365_url": bet365_url,
+                "url":        bet365_url,
+                "handicaps":  handicaps,
+                "found":      True,
+                "scraped_at": scraped_at,
+                "error":      "",
+                "match_id":   match_id,
+                "result": {
+                    "home_score": None,
+                    "away_score": None,
+                    "settled": False,
+                    "winning_handicaps": []
+                }
+            })
+
+        with open(BET365_HISTORY_FILE, "w", encoding="utf-8") as f:
+            json.dump(history, f, ensure_ascii=False, indent=2)
+        logger.info(f"bet365盘口已保存到历史记录: {match_key}, {len(handicaps)}个盘口")
+    except Exception as e:
+        logger.warning(f"_save_to_bet365_history 失败: {e}")
+
+
+def _persist_bet365_to_history(match_key: str, home: str, away: str,
+                                bet365_url: str, handicaps: list, scraped_at: str):
+    """将 bet365 盘口永久写入 signal_history.json，Render 重启也不丢失"""
+    try:
+        history = []
+        if os.path.exists(SIGNAL_HISTORY_FILE):
+            with open(SIGNAL_HISTORY_FILE, "r", encoding="utf-8") as f:
+                history = json.load(f)
+        for rec in history:
+            if rec.get("match_key") == match_key:
+                rec["bet365_url"]       = bet365_url
+                rec["bet365_handicaps"] = handicaps
+                rec["bet365_scraped_at"] = scraped_at
+                break
+        else:
+            # 当天比赛还没有 signal 记录时，先建一个占位记录
+            history.append({
+                "match_key":        match_key,
+                "date":             match_key[:10],
+                "home":             home,
+                "away":             away,
+                "bet365_url":       bet365_url,
+                "bet365_handicaps": handicaps,
+                "bet365_scraped_at": scraped_at,
+            })
+        with open(SIGNAL_HISTORY_FILE, "w", encoding="utf-8") as f:
+            json.dump(history, f, ensure_ascii=False, indent=2)
+        logger.info(f"bet365 盘口已持久化到 signal_history: {match_key}")
+    except Exception as e:
+        logger.warning(f"_persist_bet365_to_history 失败: {e}")
+
+
+@app.route("/history")
+def page_history():
+    return render_template("history.html")
+
+
 @app.route("/api/history")
 def api_history():
-    """获取 bet365 历史记录"""
+    """获取 bet365 历史记录（只返回有盘口数据的）"""
     history = load_bet365_history()
-    # 最新的排在前面
-    history = list(reversed(history))
-    return jsonify({"history": history, "total": len(history)})
+    # 过滤出有盘口数据的记录，最新排在前面
+    with_odds = [r for r in history if r.get("handicaps")]
+    without_odds = [r for r in history if not r.get("handicaps")]
+    sorted_history = list(reversed(with_odds)) + list(reversed(without_odds))
+    return jsonify({"history": sorted_history, "total": len(sorted_history)})
 
 
 @app.route("/api/history/push", methods=["POST"])
@@ -390,11 +528,22 @@ def api_bet365_fetch_direct():
                         break
                 with open(DATA_FILE, "w", encoding="utf-8") as f:
                     json.dump(data_content, f, ensure_ascii=False, indent=2)
-                # 本地模式：FETCH 成功后立即推送到云端（后台线程，不阻塞响应）
-                if MODE == "local":
-                    threading.Thread(target=_push_data_to_render, args=(data_content,), daemon=True).start()
+                # FETCH 成功后立即推送到云端（后台线程，不阻塞响应）
+                threading.Thread(target=_force_push_to_render, args=(data_content,), daemon=True).start()
             except Exception as e:
                 logger.warning(f"更新data.json失败: {e}")
+
+        # 永久保存 bet365 盘口到 signal_history 和 bet365_history（Render重启也不丢失）
+        if success and handicaps:
+            try:
+                date_str  = datetime.now().strftime("%Y-%m-%d")
+                match_key = f"{date_str}_{home}_{away}"
+                scraped_at = result.get("scraped_at", datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
+                _persist_bet365_to_history(match_key, home, away, bet365_url, handicaps, scraped_at)
+                # 同时保存到 bet365_history.json（历史页面使用）
+                _save_to_bet365_history(match_key, home, away, bet365_url, handicaps, scraped_at, match_id)
+            except Exception as e:
+                logger.warning(f"持久化bet365数据失败: {e}")
 
         return jsonify({
             "success": success,
@@ -534,7 +683,27 @@ def calculate_winning_handicaps(handicaps: list, home_team: str,
 
 @app.route("/api/today_signal")
 def api_today_signal():
-    """分析今日最热比赛，返回推荐信号"""
+    """分析今日最热比赛，返回推荐信号（优先返回本地推送的预计算信号）"""
+    # ── 优先返回本地推送过来的信号（本地算好，Render 直接展示）──
+    if os.path.exists(PUSHED_SIGNAL_FILE):
+        try:
+            with open(PUSHED_SIGNAL_FILE, "r", encoding="utf-8") as f:
+                signal = json.load(f)
+            # 附上最新历史统计（历史在 Render 端也存着）
+            try:
+                from analyzer import load_history, get_stats, record_prediction
+                history = load_history()
+                signal["stats"]   = get_stats(history)
+                signal["history"] = list(reversed(history[-10:]))
+                # 记录预测到本地历史
+                if signal.get("match_key") and "error" not in signal:
+                    record_prediction(signal["match_key"], signal)
+            except Exception:
+                pass
+            return jsonify(signal)
+        except Exception as e:
+            logger.warning(f"读取推送信号失败，降级到本地计算: {e}")
+
     try:
         from analyzer import analyze_match, record_prediction, load_history, get_stats
     except Exception as e:
@@ -546,14 +715,14 @@ def api_today_signal():
     # 找热度最高且有 bet365 数据的比赛
     target = None
     for m in sorted(matches, key=lambda x: x.get("heat_score", 0), reverse=True):
-        if m.get("bet365_handicaps") and m.get("ji_records"):
+        if m.get("bet365_handicaps") and m.get("all_records"):
             target = m
             break
 
     if not target:
         # 退而求其次：热度最高有 Crow* 记录的比赛
         for m in sorted(matches, key=lambda x: x.get("heat_score", 0), reverse=True):
-            if m.get("ji_records"):
+            if m.get("all_records"):
                 target = m
                 break
 

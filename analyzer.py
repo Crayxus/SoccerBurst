@@ -12,12 +12,18 @@ BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 WEIGHTS_FILE = os.path.join(BASE_DIR, "factor_weights.json")
 HISTORY_FILE = os.path.join(BASE_DIR, "signal_history.json")
 
-# 初始因子权重
+# 校准目标场次：积累到这个数才做权重提炼
+CALIBRATION_TARGET = 30
+
+# 初始因子权重（等权，待数据校准后自动调整）
 DEFAULT_WEIGHTS = {
-    "line_compression":      0.40,   # 盘口压缩方向（聪明钱，最重要）
-    "compression_magnitude": 0.25,   # 压缩幅度
-    "water_alignment":       0.20,   # 水位与盘口方向一致性
-    "drift_consistency":     0.15,   # 水位漂移连贯性
+    "line_compression":      0.20,   # F1 盘口压缩方向（Crow* 主线漂移方向）
+    "compression_magnitude": 0.15,   # F2 压缩幅度（漂移几步）
+    "water_alignment":       0.15,   # F3 水位与盘口对比（同向 vs 背离）
+    "drift_consistency":     0.10,   # F4 水位漂移连贯性（趋势一致程度）
+    "reverse_signal":        0.20,   # F5 逆市背离强度（背离 = 聪明钱逆公众）
+    "late_money":            0.12,   # F6 临场资金加速（最近几条记录的压力趋势）
+    "handicap_level":        0.08,   # F7 盘口档位校正（受让方反弹信号更强）
 }
 
 # 盘口排序：index越小 = 主队越弱(受让越多)，越大 = 主队越强(让越多)
@@ -86,10 +92,12 @@ def analyze_match(match_data: dict, bet365_lines: list, weights: dict = None) ->
     if weights is None:
         weights = load_weights()
 
-    ji_records  = match_data.get("ji_records", [])
     all_records = match_data.get("all_records", [])
     home        = match_data.get("home", "")
     away        = match_data.get("away", "")
+
+    # 使用早+即全部记录（排除开球后的滚球记录），按新→旧排列
+    ji_records = [r for r in all_records if r.get("status") in ("早", "即")]
 
     if not ji_records or not bet365_lines:
         return {"error": "数据不足，无法分析", "home": home, "away": away}
@@ -169,7 +177,63 @@ def analyze_match(match_data: dict, bet365_lines: list, weights: dict = None) ->
     factors["drift"] = {
         "consistency":  consistency,
         "total_drift":  total_drift,
-        "records":      len(ji_records),
+        "records":      len(ji_records),  # 早+即合计
+    }
+
+    # ── Factor 5: 逆市背离强度 ──────────────────────────────
+    # 盘口方向与水位方向相反 = 公众押一侧但庄家盘口往另一侧移 = 聪明钱逆市
+    # 背离幅度越大、水位偏差越大 = 信号越强
+    if not aligned and compression_dir != "neutral":
+        reverse_score = min(compression_size / 3.0, 1.0) * min(water_imbalance / 0.10, 1.0)
+    else:
+        reverse_score = 0.0
+
+    factors["reverse_signal"] = {
+        "score":     round(reverse_score, 3),
+        "diverging": not aligned and compression_dir != "neutral",
+        "magnitude": round(compression_size * water_imbalance, 3),
+    }
+
+    # ── Factor 6: 临场资金加速 ──────────────────────────────
+    # 最近2条记录的水位压力是否比均值更强，且方向一致
+    if len(ji_records) >= 3:
+        imbalances    = [abs(r.get("away_odds", 0.95) - r.get("home_odds", 0.95)) for r in ji_records]
+        avg_imbal     = sum(imbalances) / len(imbalances)
+        recent_imbal  = imbalances[0]
+        acceleration  = recent_imbal / (avg_imbal + 0.001) - 1.0   # >0 = 临场压力上升
+        # 检查最近2条是否方向一致
+        last2_home    = [ji_records[i].get("home_odds", 0) for i in range(min(3, len(ji_records)))]
+        last2_moves   = [last2_home[i] - last2_home[i+1] for i in range(len(last2_home)-1)]
+        consistent_dir = all(m < 0 for m in last2_moves) or all(m > 0 for m in last2_moves)
+        late_score    = min(max(acceleration, 0.0), 1.0) * (1.2 if consistent_dir else 0.8)
+        late_score    = min(late_score, 1.0)
+    else:
+        recent_imbal, avg_imbal, late_score = water_imbalance, water_imbalance, 0.3
+
+    factors["late_money"] = {
+        "score":          round(late_score, 3),
+        "recent_imbal":   round(recent_imbal, 3),
+        "avg_imbal":      round(avg_imbal, 3),
+        "accelerating":   late_score > 0.4,
+    }
+
+    # ── Factor 7: 盘口档位校正 ──────────────────────────────
+    # 受让方（弱队）的盘口向强队方向压缩 = 市场在重新评估弱队 = 信号更可信
+    # 让球方（强队）的盘口继续向强队方向压缩 = 公众追热门 = 信号可信度打折
+    pivot_val = crow_hc_to_numeric(latest_hc)
+    if compression_dir == "home":
+        # home 受让（正值）= home 是弱队，弱队压缩更可信
+        level_score = 1.0 if pivot_val >= 0.25 else (0.5 if pivot_val > -0.25 else 0.25)
+    elif compression_dir == "away":
+        # away 受让（pivot负值）= away 是弱队，弱队压缩更可信
+        level_score = 1.0 if pivot_val <= -0.25 else (0.5 if pivot_val < 0.25 else 0.25)
+    else:
+        level_score = 0.5
+
+    factors["handicap_level"] = {
+        "pivot_val":   pivot_val,
+        "score":       round(level_score, 2),
+        "context":     "弱队反压" if level_score >= 1.0 else ("均势" if level_score >= 0.5 else "强队顺势"),
     }
 
     # ── 综合决策 ────────────────────────────────────────────
@@ -179,19 +243,22 @@ def analyze_match(match_data: dict, bet365_lines: list, weights: dict = None) ->
     else:
         bet_direction = compression_dir
         if not aligned:
-            # 盘口与水位方向背离 = 公众资金 vs 聪明钱对立 = 经典爆冷信号
             signal_type = "背离爆冷"
         else:
             signal_type = "同向确认"
 
-    # ── 信心指数 ────────────────────────────────────────────
+    # ── 信心指数（7因子加权）────────────────────────────────
     s_compression = min(compression_size / 4.0, 1.0) * weights["line_compression"]
     s_magnitude   = min(compression_size / 3.0, 1.0) * weights["compression_magnitude"]
-    # 背离爆冷 = 逆市信号，价值更高，给满分；同向确认 = 可能是公众钱，打折
+    # 背离时满分，同向时 0.6（同向可能是公众钱）
     s_alignment   = (1.0 if not aligned else 0.6) * min(water_imbalance / 0.15, 1.0) * weights["water_alignment"]
     s_drift       = consistency * weights["drift_consistency"]
+    s_reverse     = reverse_score * weights["reverse_signal"]
+    s_late        = late_score    * weights["late_money"]
+    s_level       = level_score   * weights["handicap_level"]
 
-    confidence = min(int((s_compression + s_magnitude + s_alignment + s_drift) * 100), 95)
+    confidence = min(int((s_compression + s_magnitude + s_alignment + s_drift +
+                          s_reverse + s_late + s_level) * 100), 95)
 
     # ── 预测全部盘口 & 最佳线 ────────────────────────────────
     predicted_lines = predict_winning_lines(bet365_lines, bet_direction, latest_hc, confidence)
@@ -460,28 +527,89 @@ def evaluate_asian_handicap(hc_str: str, direction: str, home_score: int, away_s
     return None   # 半赢半退水
 
 
-def tune_weights(history: list) -> dict:
-    """基于历史胜负自动微调因子权重"""
+def get_calibration_status(history: list) -> dict:
+    """返回校准进度和当前是否可信"""
     settled = [r for r in history if r.get("correct") is not None]
+    n = len(settled)
+    return {
+        "settled":   n,
+        "target":    CALIBRATION_TARGET,
+        "progress":  round(n / CALIBRATION_TARGET * 100, 1),
+        "calibrated": n >= CALIBRATION_TARGET,
+        "message":   f"已校准（{n}场）" if n >= CALIBRATION_TARGET else f"校准中 {n}/{CALIBRATION_TARGET}场",
+    }
+
+
+def tune_weights(history: list) -> dict:
+    """
+    基于历史实证自动提炼因子权重。
+    核心逻辑：计算每个因子与胜负的相关性，相关越高权重越大，无相关的清零。
+    达到 CALIBRATION_TARGET 场后做完整提炼，否则仅微调。
+    """
+    settled = [r for r in history if r.get("correct") is not None and r.get("factors_snap")]
     if len(settled) < 5:
         return load_weights()
 
-    recent    = settled[-10:]
-    win_rate  = sum(1 for r in recent if r.get("correct") is True) / len(recent)
-    weights   = load_weights()
+    weights = load_weights()
 
-    if win_rate < 0.45:
-        # 胜率偏低：加大盘口压缩权重，压低水位权重
-        weights["line_compression"]      = min(weights["line_compression"]      + 0.03, 0.55)
-        weights["compression_magnitude"] = min(weights["compression_magnitude"] + 0.02, 0.35)
-        weights["water_alignment"]       = max(weights["water_alignment"]       - 0.03, 0.10)
-        weights["drift_consistency"]     = max(weights["drift_consistency"]     - 0.02, 0.08)
-    elif win_rate > 0.65:
-        # 胜率良好：小幅强化最有效因子（暂时保持）
-        pass
+    # ── 30场后做完整因子相关性提炼 ──────────────────────────
+    if len(settled) >= CALIBRATION_TARGET:
+        factor_scores = {k: [] for k in DEFAULT_WEIGHTS}
 
-    # 归一化
-    total   = sum(weights.values())
+        for r in settled:
+            fs  = r.get("factors_snap", {})
+            win = 1.0 if r.get("correct") is True else 0.0
+
+            # 提取每个因子的得分（0~1），与胜负做相关
+            factor_scores["line_compression"].append(
+                (min(fs.get("line_compression", {}).get("size", 0) / 4.0, 1.0), win))
+            factor_scores["compression_magnitude"].append(
+                (min(fs.get("line_compression", {}).get("size", 0) / 3.0, 1.0), win))
+            factor_scores["water_alignment"].append(
+                (1.0 if not fs.get("water", {}).get("aligned", True) else 0.6, win))
+            factor_scores["drift_consistency"].append(
+                (fs.get("drift", {}).get("consistency", 0.5), win))
+            factor_scores["reverse_signal"].append(
+                (fs.get("reverse_signal", {}).get("score", 0.0), win))
+            factor_scores["late_money"].append(
+                (fs.get("late_money", {}).get("score", 0.3), win))
+            factor_scores["handicap_level"].append(
+                (fs.get("handicap_level", {}).get("score", 0.5), win))
+
+        # 计算每个因子的均值差：赢场平均得分 - 输场平均得分
+        new_weights = {}
+        for k, pairs in factor_scores.items():
+            wins_scores   = [s for s, w in pairs if w == 1.0]
+            losses_scores = [s for s, w in pairs if w == 0.0]
+            if not wins_scores or not losses_scores:
+                new_weights[k] = DEFAULT_WEIGHTS[k]  # 数据不足保留默认
+                continue
+            win_avg  = sum(wins_scores)   / len(wins_scores)
+            loss_avg = sum(losses_scores) / len(losses_scores)
+            # 边际预测力：赢场得分比输场高多少
+            edge = win_avg - loss_avg
+            new_weights[k] = max(edge, 0.01)  # 负相关因子保留最低权重 0.01
+
+        # 归一化
+        total = sum(new_weights.values())
+        weights = {k: round(v / total, 3) for k, v in new_weights.items()}
+
+    else:
+        # 校准前：基于近10场胜率做简单微调
+        recent   = settled[-10:]
+        win_rate = sum(1 for r in recent if r.get("correct") is True) / len(recent)
+
+        if win_rate < 0.45:
+            weights["line_compression"]  = min(weights.get("line_compression", 0.20)  + 0.02, 0.35)
+            weights["reverse_signal"]    = min(weights.get("reverse_signal", 0.20)    + 0.02, 0.35)
+            weights["water_alignment"]   = max(weights.get("water_alignment", 0.15)   - 0.02, 0.05)
+
+    # 确保所有新因子都在权重表里（升级兼容）
+    for k, v in DEFAULT_WEIGHTS.items():
+        if k not in weights:
+            weights[k] = v
+
+    total = sum(weights.values())
     weights = {k: round(v / total, 3) for k, v in weights.items()}
 
     save_weights(weights)
@@ -494,8 +622,9 @@ def reanalyze_history(history: list) -> dict:
     找出哪些因子组合胜率最高，输出规律
     """
     settled = [r for r in history if r.get("correct") is not None and r.get("factors_snap")]
+    calib   = get_calibration_status(history)
     if len(settled) < 3:
-        return {"error": "已结算记录不足（需要至少3场）", "settled": len(settled)}
+        return {"error": "已结算记录不足（需要至少3场）", "settled": len(settled), "calibration": calib}
 
     wins   = [r for r in settled if r.get("correct") is True]
     losses = [r for r in settled if r.get("correct") is False]
