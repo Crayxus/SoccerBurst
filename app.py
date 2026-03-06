@@ -553,4 +553,4 @@ if __name__ == "__main__":
         logger.info(f"SoccerBurst 启动（云端模式）！等待本地推送数据...")
         logger.info(f"推送接口：POST /api/push  密钥：{PUSH_SECRET}")
 
-    app.run(host="0.0.0.0", port=int(os.environ.get("PORT", 5000)), debug=False, use_reloader=False)
+    app.run(host="0.0.0.0", port=int(os.environ.get("PORT", 5100)), debug=False, use_reloader=False)

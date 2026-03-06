@@ -11,7 +11,7 @@ set RENDER_URL=https://soccerburst.onrender.com
 set MODE=local
 set PUSH_SECRET=soccerburst2026
 
-echo [本地UI]  http://localhost:5000
+echo [本地UI]  http://localhost:5100
 echo [云端]    %RENDER_URL%
 echo.
 
@@ -23,7 +23,7 @@ REM 等待服务器启动
 timeout /t 3 /nobreak >nul
 
 REM 自动打开浏览器
-start http://localhost:5000
+start http://localhost:5100
 
 REM 启动扫描推送器（当前窗口）
 echo 启动扫描推送器（每5分钟扫描并推送到云端）...
