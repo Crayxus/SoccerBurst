@@ -1298,9 +1298,14 @@ def save_results(results: list[dict], filepath: str = None):
         except Exception as e:
             logger.error(f"合并历史数据失败，将重新创建: {e}")
 
-    # 用新的抓取结果覆盖已有的对应比赛
+    # 用新的抓取结果覆盖已有的对应比赛（保留已抓取的 bet365 盘口）
     for r in results:
         if "match_id" in r:
+            prev = existing_data.get(r["match_id"], {})
+            if prev.get("bet365_handicaps") and not r.get("bet365_handicaps"):
+                r["bet365_handicaps"] = prev["bet365_handicaps"]
+            if prev.get("bet365_url") and not r.get("bet365_url"):
+                r["bet365_url"] = prev["bet365_url"]
             existing_data[r["match_id"]] = r
 
     # 按照热度分排序并生成最终的 matches 列表
