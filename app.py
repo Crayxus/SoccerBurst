@@ -568,6 +568,7 @@ def api_today_signal():
         match_key = f"{data.get('last_updated', '')[:10]}_{target.get('home')}_{target.get('away')}"
         record_prediction(match_key, result)
         result["match_key"]   = match_key
+        result["match_id"]    = target.get("match_id", "")
         result["league"]      = target.get("league", "")
         result["match_time"]  = target.get("match_time", "")
         result["heat_score"]  = target.get("heat_score", 0)
