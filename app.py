@@ -20,7 +20,7 @@ import time
 import logging
 from datetime import datetime
 from flask import Flask, jsonify, render_template, Response, request
-from scraper import scan_all_matches, save_results, save_bet365_history
+# scraper 函数在本地模式下惰性导入，避免云端因缺少依赖（DrissionPage等）崩溃
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s %(levelname)s %(message)s')
 logger = logging.getLogger(__name__)
@@ -74,6 +74,7 @@ def run_scan():
     logger.info("开始扫描...")
 
     try:
+        from scraper import scan_all_matches, save_results  # 仅本地模式需要
         loop = asyncio.new_event_loop()
         asyncio.set_event_loop(loop)
         results = loop.run_until_complete(scan_all_matches())
