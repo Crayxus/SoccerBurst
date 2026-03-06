@@ -15,12 +15,18 @@ import asyncio
 import json
 import os
 import re
+import sys
 import threading
 import time
 import logging
 import urllib.request
 import urllib.error
 from datetime import datetime
+
+# 确保本文件所在目录在 Python 路径中（Render 云端或特殊启动方式下需要）
+_BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+if _BASE_DIR not in sys.path:
+    sys.path.insert(0, _BASE_DIR)
 from flask import Flask, jsonify, render_template, Response, request
 # scraper 函数在本地模式下惰性导入，避免云端因缺少依赖（DrissionPage等）崩溃
 

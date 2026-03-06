@@ -146,9 +146,14 @@ async def scan_and_push():
             except Exception as e:
                 logger.error(f"合并历史数据失败: {e}")
 
-        # 合并新数据
+        # 合并新数据（保留已抓取的 bet365 盘口，防止扫描覆盖）
         for r in results:
             if "match_id" in r:
+                prev = existing_data.get(r["match_id"], {})
+                if prev.get("bet365_handicaps") and not r.get("bet365_handicaps"):
+                    r["bet365_handicaps"] = prev["bet365_handicaps"]
+                if prev.get("bet365_url") and not r.get("bet365_url"):
+                    r["bet365_url"] = prev["bet365_url"]
                 existing_data[r["match_id"]] = r
 
         final_matches = list(existing_data.values())
