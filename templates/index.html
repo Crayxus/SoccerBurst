@@ -438,7 +438,7 @@
         <div class="signal-type ${typeClass}">${d.signal_type}</div>
         <div class="signal-team">${d.direction_team}</div>
         <div class="signal-line">${hc}</div>
-        <div class="signal-odds">@ ${odds}</div>
+        <div class="signal-odds">@ ${odds}${line.ev != null ? ` <span style="font-size:12px;opacity:0.7">EV ${line.ev>=0?'+':''}${((line.ev||0)*100).toFixed(1)}%</span>` : ''}</div>
         <div class="confidence-bar-wrap">
           <div class="confidence-bar-bg">
             <div class="confidence-bar-fill" style="width:${conf}%"></div>
@@ -466,6 +466,13 @@
       return;
     }
 
+    const fmtEv = ev => {
+      if (ev === undefined || ev === null) return '';
+      const s = (ev >= 0 ? '+' : '') + (ev * 100).toFixed(1) + '%';
+      return `<span style="font-size:9px;color:${ev > 0 ? 'var(--green)' : 'var(--muted)'}">${s}</span>`;
+    };
+    const fmtProb = p => p != null ? `<span style="font-size:9px;color:var(--muted)">${Math.round(p*100)}%</span>` : '';
+
     const rows = lines.map(line => {
       const hp = line.home_predicted;
       const ap = line.away_predicted;
@@ -481,22 +488,22 @@
 
       return `<tr class="${isBestRow ? 'pred-best' : ''} ${isPivot ? 'pivot-row' : ''}">
         <td class="${hp ? 'pred-win' : 'pred-lose'}">${hp ? '✓' : '·'} ${line.home_handicap}${hStar}</td>
-        <td class="${hp ? 'pred-win' : 'pred-lose'}">${line.home_odds}</td>
+        <td class="${hp ? 'pred-win' : 'pred-lose'}">${line.home_odds} ${fmtProb(line.home_prob)} ${fmtEv(line.home_ev)}</td>
         <td class="${ap ? 'pred-win' : 'pred-lose'}">${ap ? '✓' : '·'} ${line.away_handicap}${aStar}${pivLbl}</td>
-        <td class="${ap ? 'pred-win' : 'pred-lose'}">${line.away_odds}</td>
+        <td class="${ap ? 'pred-win' : 'pred-lose'}">${line.away_odds} ${fmtProb(line.away_prob)} ${fmtEv(line.away_ev)}</td>
       </tr>`;
     }).join('');
 
     document.getElementById('pred-content').innerHTML = `
       <table class="pred-table">
         <thead><tr>
-          <th>${d.home} 盘口</th><th>赔率</th>
-          <th>${d.away} 盘口</th><th>赔率</th>
+          <th>${d.home} 盘口</th><th>赔率 概率 EV</th>
+          <th>${d.away} 盘口</th><th>赔率 概率 EV</th>
         </tr></thead>
         <tbody>${rows}</tbody>
       </table>
       <div style="font-size:10px;color:var(--muted);margin-top:8px">
-        ✓ 预测出线 &nbsp;·&nbsp; 暗色=预测不出 &nbsp;·&nbsp; ★ 最佳价值盘口
+        ✓ 预测出线 &nbsp;·&nbsp; 暗色=预测不出 &nbsp;·&nbsp; ★ 最佳EV盘口 &nbsp;·&nbsp; EV=期望值（正=有价值）
       </div>`;
   }
 

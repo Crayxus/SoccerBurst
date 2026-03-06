@@ -187,14 +187,15 @@ def analyze_match(match_data: dict, bet365_lines: list, weights: dict = None) ->
     # ── 信心指数 ────────────────────────────────────────────
     s_compression = min(compression_size / 4.0, 1.0) * weights["line_compression"]
     s_magnitude   = min(compression_size / 3.0, 1.0) * weights["compression_magnitude"]
-    s_alignment   = (1.0 if aligned else 0.5) * min(water_imbalance / 0.15, 1.0) * weights["water_alignment"]
+    # 背离爆冷 = 逆市信号，价值更高，给满分；同向确认 = 可能是公众钱，打折
+    s_alignment   = (1.0 if not aligned else 0.6) * min(water_imbalance / 0.15, 1.0) * weights["water_alignment"]
     s_drift       = consistency * weights["drift_consistency"]
 
     confidence = min(int((s_compression + s_magnitude + s_alignment + s_drift) * 100), 95)
 
     # ── 预测全部盘口 & 最佳线 ────────────────────────────────
-    predicted_lines = predict_winning_lines(bet365_lines, bet_direction, latest_hc)
-    best_line       = pick_best_line(bet365_lines, bet_direction, latest_hc)
+    predicted_lines = predict_winning_lines(bet365_lines, bet_direction, latest_hc, confidence)
+    best_line       = pick_best_line(bet365_lines, bet_direction, latest_hc, confidence)
     crow_pivot      = crow_hc_to_numeric(latest_hc)
 
     win_count  = sum(1 for p in predicted_lines if
@@ -260,17 +261,20 @@ def bet365_hc_to_numeric(hc_str: str) -> float:
     return sum(vals) / len(vals)
 
 
-def predict_winning_lines(bet365_lines: list, direction: str, crow_hc: str) -> list:
+def predict_winning_lines(bet365_lines: list, direction: str, crow_hc: str, confidence: int = 55) -> list:
     """
-    对每条 bet365 盘口线打 PREDICTED WIN / LOSE 标签
+    对每条 bet365 盘口线计算概率并打标签。
 
     原理：
-    - Crow* 主线是市场分水岭（约 50/50）
-    - 信号方向那侧：主队数值 >= 分水岭 = 预测赢（如果信号是主队）
-    - 预测赢的线赔率越高越有价值（距分水岭越近赔率越高）
+    - 用市场赔率反推各盘口隐含概率（去除庄家利润后归一化）
+    - 在隐含概率基础上叠加信号方向的调整量（信心越高调整越大）
+    - 预测赢 = 调整后概率 > 50%
+    - 期望值 EV = 调整后概率 × 赔率 - 1（>0 = 正期望）
     """
-    pivot = crow_hc_to_numeric(crow_hc)
-    result = []
+    pivot         = crow_hc_to_numeric(crow_hc)
+    # 信号强度：confidence 50% = 无信号，95% = 最强，对应最多 ±12% 概率偏移
+    signal_shift  = ((confidence - 50) / 50.0) * 0.12
+    result        = []
 
     for line in bet365_lines:
         home_hc_str  = line.get("home_handicap", "")
@@ -279,68 +283,88 @@ def predict_winning_lines(bet365_lines: list, direction: str, crow_hc: str) -> l
         away_odds    = line.get("away_odds", 0)
         home_numeric = bet365_hc_to_numeric(home_hc_str)
 
-        # 信号是主队：home_numeric >= pivot → 主队这条线预测赢
-        # 信号是客队：home_numeric <  pivot → 客队这条线预测赢
-        if direction == "home":
-            home_predicted = home_numeric >= pivot
-            away_predicted = not home_predicted
+        # 市场隐含概率（去除双向盘水分后归一化）
+        if home_odds > 1.0 and away_odds > 1.0:
+            raw_h = 1.0 / home_odds
+            raw_a = 1.0 / away_odds
+            total = raw_h + raw_a
+            home_impl = raw_h / total
         else:
-            away_predicted = home_numeric < pivot
-            home_predicted = not away_predicted
+            home_impl = 0.5
 
-        # 最佳价值：预测赢 + 赔率在甜蜜点 1.75-2.20
-        home_value = home_predicted and (1.75 <= home_odds <= 2.20)
-        away_value = away_predicted and (1.75 <= away_odds <= 2.20)
+        # 叠加信号方向偏移
+        if direction == "home":
+            home_prob = min(0.92, max(0.08, home_impl + signal_shift))
+        elif direction == "away":
+            home_prob = min(0.92, max(0.08, home_impl - signal_shift))
+        else:
+            home_prob = home_impl
+        away_prob = 1.0 - home_prob
+
+        # 期望值
+        home_ev = round(home_prob * home_odds - 1.0, 3) if home_odds > 1.0 else -1.0
+        away_ev = round(away_prob * away_odds - 1.0, 3) if away_odds > 1.0 else -1.0
+
+        home_predicted = home_prob > 0.50
+        away_predicted = away_prob > 0.50
+
+        # 最佳价值：正期望 + 赔率在甜蜜区间（信号方向那侧）
+        home_value = (home_ev > 0) and (1.70 <= home_odds <= 2.30) and (direction == "home")
+        away_value = (away_ev > 0) and (1.70 <= away_odds <= 2.30) and (direction == "away")
 
         result.append({
-            "home_handicap": home_hc_str,
-            "home_odds":     home_odds,
-            "away_handicap": away_hc_str,
-            "away_odds":     away_odds,
-            "home_numeric":  home_numeric,
-            "home_predicted": home_predicted,
-            "away_predicted": away_predicted,
+            "home_handicap":   home_hc_str,
+            "home_odds":       home_odds,
+            "away_handicap":   away_hc_str,
+            "away_odds":       away_odds,
+            "home_numeric":    home_numeric,
+            "home_prob":       round(home_prob, 3),
+            "away_prob":       round(away_prob, 3),
+            "home_ev":         home_ev,
+            "away_ev":         away_ev,
+            "home_predicted":  home_predicted,
+            "away_predicted":  away_predicted,
             "home_best_value": home_value,
             "away_best_value": away_value,
         })
 
-    # 按主队数值从大到小排列（受让多 → 让多）
     result.sort(key=lambda x: x["home_numeric"], reverse=True)
     return result
 
 
-def pick_best_line(bet365_lines: list, direction: str, crow_hc: str = "") -> dict:
-    """从预测赢的线里选赔率最接近甜蜜点的那条"""
-    predictions = predict_winning_lines(bet365_lines, direction, crow_hc)
+def pick_best_line(bet365_lines: list, direction: str, crow_hc: str = "", confidence: int = 55) -> dict:
+    """选期望值最高的一条线（正期望优先，再看赔率甜蜜区间）"""
+    predictions = predict_winning_lines(bet365_lines, direction, crow_hc, confidence)
 
-    best       = None
-    best_score = -1
+    best    = None
+    best_ev = -999.0
 
     for p in predictions:
         if direction == "home" and p["home_predicted"]:
+            ev   = p["home_ev"]
             odds = p["home_odds"]
             hc   = p["home_handicap"]
+            prob = p["home_prob"]
         elif direction == "away" and p["away_predicted"]:
+            ev   = p["away_ev"]
             odds = p["away_odds"]
             hc   = p["away_handicap"]
+            prob = p["away_prob"]
         else:
             continue
 
-        if not odds or odds <= 1.0:
+        if odds <= 1.0:
             continue
 
-        if 1.75 <= odds <= 2.20:
-            score = odds
-        elif 1.60 <= odds < 1.75:
-            score = odds * 0.75
-        elif 2.20 < odds <= 2.50:
-            score = odds * 0.60
+        # 甜蜜区间内 EV 直接比较；区间外打折惩罚
+        if 1.70 <= odds <= 2.30:
+            score = ev
         else:
-            score = odds * 0.15
+            score = ev - 0.05  # 赔率偏低或偏高时降权
 
-        if score > best_score:
-            best_score = score
-            best = {"handicap": hc, "odds": odds}
+        if score > best_ev:
+            best_ev = score
+            best = {"handicap": hc, "odds": odds, "prob": round(prob, 3), "ev": round(ev, 3)}
 
     return best or {}
 
