@@ -18,6 +18,8 @@ import re
 import threading
 import time
 import logging
+import urllib.request
+import urllib.error
 from datetime import datetime
 from flask import Flask, jsonify, render_template, Response, request
 # scraper 函数在本地模式下惰性导入，避免云端因缺少依赖（DrissionPage等）崩溃
@@ -33,6 +35,7 @@ SCAN_INTERVAL = 300  # 5分钟 = 300秒
 # 从环境变量读取配置
 PUSH_SECRET = os.environ.get("PUSH_SECRET", "soccerburst2026")
 MODE = os.environ.get("MODE", "cloud")  # "cloud" 或 "local"
+RENDER_URL = os.environ.get("RENDER_URL", "https://soccerburst.onrender.com")
 
 # 全局状态
 scan_status = {
@@ -43,6 +46,27 @@ scan_status = {
     "error": None,
     "mode": MODE
 }
+
+
+def _push_data_to_render(data: dict):
+    """将 data.json 内容立即推送到 Render 云端（后台调用）"""
+    if MODE != "local":
+        return
+    url = f"{RENDER_URL.rstrip('/')}/api/push"
+    try:
+        payload = json.dumps(data, ensure_ascii=False).encode("utf-8")
+        req = urllib.request.Request(url, data=payload, method="POST", headers={
+            "Content-Type": "application/json; charset=utf-8",
+            "X-Push-Secret": PUSH_SECRET,
+        })
+        with urllib.request.urlopen(req, timeout=20) as resp:
+            result = json.loads(resp.read().decode("utf-8"))
+            if result.get("success"):
+                logger.info(f"✅ bet365数据已推送到云端")
+            else:
+                logger.warning(f"云端推送失败: {result.get('message')}")
+    except Exception as e:
+        logger.warning(f"云端推送异常（非致命）: {e}")
 
 
 def load_data() -> dict:
@@ -360,6 +384,9 @@ def api_bet365_fetch_direct():
                         break
                 with open(DATA_FILE, "w", encoding="utf-8") as f:
                     json.dump(data_content, f, ensure_ascii=False, indent=2)
+                # 本地模式：FETCH 成功后立即推送到云端（后台线程，不阻塞响应）
+                if MODE == "local":
+                    threading.Thread(target=_push_data_to_render, args=(data_content,), daemon=True).start()
             except Exception as e:
                 logger.warning(f"更新data.json失败: {e}")
 
