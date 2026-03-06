@@ -529,7 +529,10 @@ def calculate_winning_handicaps(handicaps: list, home_team: str,
 @app.route("/api/today_signal")
 def api_today_signal():
     """分析今日最热比赛，返回推荐信号"""
-    from analyzer import analyze_match, record_prediction, load_history, get_stats
+    try:
+        from analyzer import analyze_match, record_prediction, load_history, get_stats
+    except Exception as e:
+        return jsonify({"error": f"analyzer 加载失败: {e}"})
 
     data = load_data()
     matches = data.get("matches", [])
@@ -542,25 +545,35 @@ def api_today_signal():
             break
 
     if not target:
-        # 退而求其次：热度最高的比赛（即使没 bet365）
+        # 退而求其次：热度最高有 Crow* 记录的比赛
         for m in sorted(matches, key=lambda x: x.get("heat_score", 0), reverse=True):
             if m.get("ji_records"):
                 target = m
                 break
 
     if not target:
-        return jsonify({"error": "暂无可分析数据，请先扫描"})
+        from analyzer import load_history, get_stats
+        history = load_history()
+        return jsonify({
+            "error": "暂无数据，请在本地运行 start.bat 后等待自动推送",
+            "stats": get_stats(history),
+            "history": list(reversed(history[-10:])),
+        })
 
-    bet365_lines = target.get("bet365_handicaps", [])
-    result = analyze_match(target, bet365_lines)
+    bet365_lines   = target.get("bet365_handicaps", [])
+    has_bet365     = bool(bet365_lines)
+    result         = analyze_match(target, bet365_lines if has_bet365 else [{"home_handicap":"待抓取","home_odds":0,"away_handicap":"--","away_odds":0}])
 
     if "error" not in result:
         match_key = f"{data.get('last_updated', '')[:10]}_{target.get('home')}_{target.get('away')}"
         record_prediction(match_key, result)
-        result["match_key"] = match_key
-        result["league"]     = target.get("league", "")
-        result["match_time"] = target.get("match_time", "")
-        result["heat_score"] = target.get("heat_score", 0)
+        result["match_key"]   = match_key
+        result["league"]      = target.get("league", "")
+        result["match_time"]  = target.get("match_time", "")
+        result["heat_score"]  = target.get("heat_score", 0)
+        result["has_bet365"]  = has_bet365
+        if not has_bet365:
+            result["warning"] = "bet365 数据未抓取，请在本地 FETCH 后自动同步"
 
     history = load_history()
     result["stats"]   = get_stats(history)
