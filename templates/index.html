@@ -3,30 +3,22 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>♠ CRAYXUS // SOCCER SNIPER</title>
+  <title>CRAYXUS SIGNAL</title>
   <style>
     @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700&display=swap');
 
     :root {
-      --bg: #060810;
-      --bg2: #0c0f1a;
-      --card: #0f1320;
+      --bg:     #060810;
+      --card:   #0c0f1a;
       --border: #1e2538;
-      --border2: #252d45;
-      --text: #cdd6f4;
-      --muted: #6c7086;
-      --green: #a6e3a1;
-      --red: #f38ba8;
+      --text:   #cdd6f4;
+      --muted:  #4a5273;
+      --green:  #a6e3a1;
+      --red:    #f38ba8;
       --yellow: #f9e2af;
-      --blue: #89b4fa;
-      --cyan: #89dceb;
+      --blue:   #89b4fa;
       --purple: #cba6f7;
       --orange: #fab387;
-      --teal: #94e2d5;
-      --glow-green: 0 0 12px rgba(166,227,161,0.4);
-      --glow-red: 0 0 12px rgba(243,139,168,0.4);
-      --glow-blue: 0 0 12px rgba(137,180,250,0.4);
-      --glow-purple: 0 0 12px rgba(203,166,247,0.4);
     }
 
     * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -34,1215 +26,550 @@
     body {
       background: var(--bg);
       color: var(--text);
-      font-family: 'JetBrains Mono', 'Fira Code', 'Consolas', monospace;
+      font-family: 'JetBrains Mono', monospace;
       min-height: 100vh;
-      overflow-x: hidden;
-    }
-
-    /* ── SCANLINES OVERLAY ── */
-    body::before {
-      content: '';
-      position: fixed;
-      top: 0; left: 0; right: 0; bottom: 0;
-      background: repeating-linear-gradient(
-        0deg,
-        transparent,
-        transparent 2px,
-        rgba(0,0,0,0.04) 2px,
-        rgba(0,0,0,0.04) 4px
-      );
-      pointer-events: none;
-      z-index: 9999;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 32px 16px;
     }
 
     /* ── HEADER ── */
-    header {
-      background: var(--bg2);
-      border-bottom: 1px solid var(--border2);
-      padding: 0 24px;
-      height: 56px;
+    .header {
+      width: 100%;
+      max-width: 720px;
       display: flex;
-      align-items: center;
       justify-content: space-between;
-      position: sticky;
-      top: 0;
-      z-index: 100;
-    }
-
-    .logo {
-      font-size: 18px;
-      font-weight: 700;
-      letter-spacing: 3px;
-      color: var(--purple);
-      text-shadow: var(--glow-purple);
-    }
-    .logo .spade { color: var(--text); opacity: 0.9; margin-right: 8px; }
-    .logo .slash { color: var(--muted); }
-
-    .header-right {
-      display: flex;
       align-items: center;
-      gap: 20px;
+      margin-bottom: 28px;
+    }
+    .logo { font-size: 13px; font-weight: 700; color: var(--purple); letter-spacing: 3px; }
+    .version { font-size: 11px; color: var(--muted); }
+
+    /* ── CARD ── */
+    .card {
+      width: 100%;
+      max-width: 720px;
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 24px;
+      margin-bottom: 16px;
+    }
+
+    .card-label {
+      font-size: 10px;
+      color: var(--muted);
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      margin-bottom: 16px;
+    }
+
+    /* ── MATCH INFO ── */
+    .match-meta {
       font-size: 11px;
       color: var(--muted);
-      letter-spacing: 1px;
+      margin-bottom: 10px;
     }
-
-    .live-dot {
-      display: inline-flex;
-      align-items: center;
-      gap: 6px;
-      color: var(--green);
-      font-size: 11px;
-      font-weight: 600;
-      letter-spacing: 2px;
-    }
-    .live-dot::before {
-      content: '';
-      width: 7px; height: 7px;
-      border-radius: 50%;
-      background: var(--green);
-      box-shadow: var(--glow-green);
-      animation: blink 1.4s infinite;
-    }
-    .live-dot.offline { color: var(--muted); }
-    .live-dot.offline::before { background: var(--muted); animation: none; box-shadow: none; }
-    .live-dot.scanning { color: var(--yellow); }
-    .live-dot.scanning::before { background: var(--yellow); }
-
-    @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.2} }
-
-    /* ── MAIN LAYOUT ── */
-    main { padding: 20px 24px; max-width: 1600px; margin: 0 auto; }
-
-    /* ── SNIPER SIGNAL CARD (TOP) ── */
-    .sniper-card {
-      background: linear-gradient(135deg, #0f1320 0%, #12102a 100%);
-      border: 1px solid var(--purple);
-      border-radius: 12px;
-      padding: 20px 28px;
-      margin-bottom: 20px;
-      display: flex;
-      align-items: center;
-      gap: 28px;
-      box-shadow: 0 0 30px rgba(203,166,247,0.08);
-      position: relative;
-      overflow: hidden;
-    }
-    .sniper-card::before {
-      content: '♠';
-      position: absolute;
-      right: 28px;
-      top: 50%;
-      transform: translateY(-50%);
-      font-size: 80px;
-      color: rgba(203,166,247,0.06);
-      font-weight: 700;
-    }
-    .sniper-label {
-      font-size: 10px;
-      letter-spacing: 3px;
-      color: var(--purple);
-      text-transform: uppercase;
-      margin-bottom: 4px;
-    }
-    .sniper-match {
+    .match-teams {
       font-size: 22px;
       font-weight: 700;
       color: var(--text);
-      letter-spacing: 1px;
-    }
-    .sniper-signal {
-      margin-left: auto;
-      text-align: right;
-    }
-    .sniper-direction {
-      font-size: 28px;
-      font-weight: 700;
-      letter-spacing: 2px;
-    }
-    .sniper-direction.home { color: var(--red); text-shadow: var(--glow-red); }
-    .sniper-direction.away { color: var(--blue); text-shadow: var(--glow-blue); }
-    .sniper-direction.neutral { color: var(--muted); }
-    .sniper-meta {
-      font-size: 11px;
-      color: var(--muted);
-      margin-top: 4px;
-    }
-
-    /* Momentum Bar */
-    .momentum-bar-wrap {
-      width: 200px;
-      flex-shrink: 0;
-    }
-    .momentum-label {
-      font-size: 10px;
-      letter-spacing: 2px;
-      color: var(--muted);
-      margin-bottom: 6px;
-      display: flex;
-      justify-content: space-between;
-    }
-    .momentum-label span { color: var(--text); }
-    .momentum-track {
-      height: 8px;
-      background: var(--border2);
-      border-radius: 4px;
-      overflow: hidden;
-    }
-    .momentum-fill {
-      height: 100%;
-      border-radius: 4px;
-      transition: width 1s ease;
-      background: linear-gradient(90deg, var(--purple), var(--red));
-      box-shadow: var(--glow-red);
-    }
-
-    /* ── STATS ROW ── */
-    .stats-row {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
-      gap: 12px;
-      margin-bottom: 20px;
-    }
-    .stat-card {
-      background: var(--card);
-      border: 1px solid var(--border);
-      border-radius: 8px;
-      padding: 16px 20px;
-      position: relative;
-    }
-    .stat-card .sv {
-      font-size: 32px;
-      font-weight: 700;
-      line-height: 1;
       margin-bottom: 4px;
     }
-    .stat-card .sl { font-size: 10px; color: var(--muted); letter-spacing: 2px; text-transform: uppercase; }
-    .stat-card.alert-card { border-color: var(--red); }
-    .stat-card.alert-card .sv { color: var(--red); text-shadow: var(--glow-red); }
-    .stat-card .sv.green { color: var(--green); }
-    .stat-card .sv.blue { color: var(--blue); }
-    .stat-card .sv.yellow { color: var(--yellow); }
+    .match-teams .vs { color: var(--muted); font-size: 14px; font-weight: 400; margin: 0 10px; }
 
-    /* ── TOOLBAR ── */
-    .toolbar {
+    /* ── SIGNAL BOX ── */
+    .signal-box {
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      padding: 20px;
+      margin: 16px 0;
+      text-align: center;
+      position: relative;
+    }
+    .signal-box.home  { border-color: var(--green);  background: rgba(166,227,161,0.04); }
+    .signal-box.away  { border-color: var(--orange); background: rgba(250,179,135,0.04); }
+    .signal-box.cold  { border-color: var(--red);    background: rgba(243,139,168,0.05); }
+    .signal-box.empty { border-color: var(--muted);  }
+
+    .signal-type {
+      font-size: 10px;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      margin-bottom: 8px;
+    }
+    .signal-type.cold   { color: var(--red); }
+    .signal-type.normal { color: var(--green); }
+    .signal-type.water  { color: var(--blue); }
+
+    .signal-team {
+      font-size: 28px;
+      font-weight: 700;
+      margin-bottom: 8px;
+    }
+    .home  .signal-team { color: var(--green); }
+    .away  .signal-team { color: var(--orange); }
+    .cold  .signal-team { color: var(--red); }
+
+    .signal-line {
+      font-size: 16px;
+      color: var(--yellow);
+      margin-bottom: 4px;
+    }
+    .signal-odds {
+      font-size: 24px;
+      font-weight: 700;
+      color: var(--yellow);
+    }
+
+    .confidence-bar-wrap {
+      margin-top: 16px;
       display: flex;
       align-items: center;
       gap: 10px;
-      margin-bottom: 16px;
-      flex-wrap: wrap;
     }
-    .btn {
-      padding: 7px 16px;
-      border-radius: 6px;
-      border: 1px solid var(--border2);
-      background: var(--card);
-      color: var(--text);
-      font-family: inherit;
-      font-size: 12px;
-      letter-spacing: 1px;
-      cursor: pointer;
-      transition: all 0.15s;
-    }
-    .btn:hover { border-color: var(--purple); color: var(--purple); }
-    .btn.primary { border-color: var(--purple); color: var(--purple); }
-    .btn.primary:hover { background: rgba(203,166,247,0.1); box-shadow: var(--glow-purple); }
-    .btn.danger { border-color: var(--red); color: var(--red); }
-    .toolbar-right { margin-left: auto; display: flex; gap: 10px; align-items: center; }
-    .countdown { font-size: 12px; color: var(--muted); letter-spacing: 1px; }
-
-    /* ── MATCH CARDS ── */
-    .matches-grid { display: flex; flex-direction: column; gap: 12px; }
-
-    .match-card {
-      background: var(--card);
-      border: 1px solid var(--border);
-      border-radius: 10px;
-      overflow: hidden;
-      transition: border-color 0.2s;
-    }
-    .match-card:hover { border-color: var(--border2); }
-    .match-card.rank-1 { border-color: var(--purple); box-shadow: 0 0 20px rgba(203,166,247,0.06); }
-    .match-card.rank-2 { border-color: rgba(137,180,250,0.4); }
-    .match-card.rank-3 { border-color: rgba(148,226,213,0.3); }
-    .match-card.has-alert { border-color: var(--red); box-shadow: 0 0 16px rgba(243,139,168,0.1); }
-
-    .match-header {
-      padding: 14px 20px;
-      display: flex;
-      align-items: center;
-      gap: 16px;
-      cursor: pointer;
-      user-select: none;
-      border-bottom: 1px solid transparent;
-      transition: background 0.15s;
-    }
-    .match-header:hover { background: rgba(255,255,255,0.02); }
-    .match-header.expanded { border-bottom-color: var(--border); }
-
-    .rank-badge {
-      width: 28px; height: 28px;
-      border-radius: 6px;
-      display: flex; align-items: center; justify-content: center;
-      font-size: 12px;
-      font-weight: 700;
-      flex-shrink: 0;
-    }
-    .rank-badge.r1 { background: rgba(203,166,247,0.15); color: var(--purple); border: 1px solid var(--purple); }
-    .rank-badge.r2 { background: rgba(137,180,250,0.1); color: var(--blue); border: 1px solid rgba(137,180,250,0.3); }
-    .rank-badge.r3 { background: rgba(148,226,213,0.1); color: var(--teal); border: 1px solid rgba(148,226,213,0.3); }
-    .rank-badge.rn { background: var(--bg2); color: var(--muted); border: 1px solid var(--border); }
-
-    .match-teams {
+    .confidence-bar-bg {
       flex: 1;
-      min-width: 0;
-    }
-    .match-teams .teams-name {
-      font-size: 15px;
-      font-weight: 600;
-      letter-spacing: 0.5px;
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-    }
-    .match-teams .teams-meta {
-      font-size: 11px;
-      color: var(--muted);
-      margin-top: 3px;
-    }
-
-    .match-heat {
-      text-align: right;
-      flex-shrink: 0;
-    }
-    .heat-score {
-      font-size: 22px;
-      font-weight: 700;
-      color: var(--yellow);
-    }
-    .heat-label { font-size: 10px; color: var(--muted); letter-spacing: 1px; }
-
-    /* Signal pill */
-    .signal-pill {
-      padding: 4px 12px;
-      border-radius: 20px;
-      font-size: 11px;
-      font-weight: 600;
-      letter-spacing: 1px;
-      flex-shrink: 0;
-      white-space: nowrap;
-    }
-    .signal-pill.home { background: rgba(243,139,168,0.15); color: var(--red); border: 1px solid rgba(243,139,168,0.3); }
-    .signal-pill.away { background: rgba(137,180,250,0.15); color: var(--blue); border: 1px solid rgba(137,180,250,0.3); }
-    .signal-pill.neutral { background: var(--bg2); color: var(--muted); border: 1px solid var(--border); }
-
-    .momentum-mini {
-      width: 80px;
-      flex-shrink: 0;
-    }
-    .momentum-mini-track {
       height: 4px;
-      background: var(--border2);
+      background: var(--border);
       border-radius: 2px;
       overflow: hidden;
-      margin-top: 4px;
     }
-    .momentum-mini-fill {
+    .confidence-bar-fill {
       height: 100%;
       border-radius: 2px;
-      background: linear-gradient(90deg, var(--purple), var(--red));
+      background: var(--purple);
+      transition: width 0.6s ease;
     }
-    .momentum-mini-val {
-      font-size: 10px;
-      color: var(--muted);
-      letter-spacing: 1px;
-    }
-
-    .chevron {
-      color: var(--muted);
+    .confidence-label {
       font-size: 12px;
-      flex-shrink: 0;
-      transition: transform 0.2s;
-    }
-    .chevron.open { transform: rotate(90deg); }
-
-    /* ── MATCH BODY (expanded) ── */
-    .match-body { display: none; padding: 16px 20px; }
-    .match-body.open { display: block; }
-
-    /* Signal detail bar */
-    .signal-detail {
-      background: var(--bg2);
-      border: 1px solid var(--border2);
-      border-radius: 8px;
-      padding: 14px 18px;
-      margin-bottom: 16px;
-      display: flex;
-      gap: 28px;
-      flex-wrap: wrap;
-      align-items: center;
-    }
-    .sd-item { font-size: 11px; }
-    .sd-item .sd-k { color: var(--muted); letter-spacing: 1px; margin-bottom: 2px; font-size: 10px; }
-    .sd-item .sd-v { font-size: 14px; font-weight: 600; color: var(--text); }
-    .sd-item .sd-v.up { color: var(--green); }
-    .sd-item .sd-v.down { color: var(--red); }
-    .sd-item .sd-v.blue { color: var(--blue); }
-
-    /* Odds table */
-    .table-wrap { overflow-x: auto; }
-    .odds-table {
-      width: 100%;
-      border-collapse: collapse;
-      font-size: 12px;
-    }
-    .odds-table th {
-      background: var(--bg2);
-      color: var(--muted);
-      font-size: 10px;
-      letter-spacing: 2px;
-      text-transform: uppercase;
-      padding: 8px 12px;
-      text-align: left;
-      border-bottom: 1px solid var(--border);
-      white-space: nowrap;
-    }
-    .odds-table td {
-      padding: 7px 12px;
-      border-bottom: 1px solid rgba(30,37,56,0.6);
-      white-space: nowrap;
-    }
-    .odds-table tr:last-child td { border-bottom: none; }
-    .odds-table tr:hover td { background: rgba(255,255,255,0.015); }
-
-    .odds-table tr.in-window td { background: rgba(137,180,250,0.04); }
-    .odds-table tr.in-window td:first-child { border-left: 2px solid var(--blue); }
-
-    .odds-home { color: var(--red); font-weight: 600; }
-    .odds-away { color: var(--blue); font-weight: 600; }
-    .odds-hcap { color: var(--yellow); font-weight: 600; }
-    .status-ji { color: var(--red); font-size: 10px; }
-    .status-zao { color: var(--green); font-size: 10px; }
-
-    .more-records-btn {
-      display: block;
-      width: 100%;
-      padding: 8px;
-      margin-top: 8px;
-      background: none;
-      border: 1px dashed var(--border2);
-      border-radius: 6px;
-      color: var(--muted);
-      font-family: inherit;
-      font-size: 11px;
-      cursor: pointer;
-      text-align: center;
-      letter-spacing: 1px;
-    }
-    .more-records-btn:hover { border-color: var(--purple); color: var(--purple); }
-
-    /* Bet365 section */
-    .bet365-section {
-      margin-top: 16px;
-      background: var(--bg2);
-      border: 1px solid var(--border2);
-      border-radius: 8px;
-      padding: 14px 18px;
-    }
-    .bet365-title {
-      font-size: 10px;
-      color: var(--orange);
-      letter-spacing: 3px;
-      text-transform: uppercase;
-      margin-bottom: 12px;
-    }
-    .hcap-grid {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 8px;
-    }
-    .hcap-pill {
-      background: var(--card);
-      border: 1px solid var(--border2);
-      border-radius: 6px;
-      padding: 8px 14px;
-      font-size: 12px;
-    }
-    .hcap-pill .hp-line { color: var(--yellow); font-weight: 600; }
-    .hcap-pill .hp-odds { color: var(--muted); font-size: 11px; margin-top: 2px; }
-
-    /* ── ALERT BADGE ── */
-    .alert-badge {
-      display: inline-flex;
-      align-items: center;
-      gap: 6px;
-      padding: 3px 10px;
-      background: rgba(243,139,168,0.12);
-      border: 1px solid rgba(243,139,168,0.3);
-      border-radius: 4px;
-      color: var(--red);
-      font-size: 10px;
-      letter-spacing: 1px;
-    }
-
-    /* ── EMPTY STATE ── */
-    .empty {
-      text-align: center;
-      padding: 80px 20px;
-      color: var(--muted);
-    }
-    .empty .e-icon { font-size: 48px; margin-bottom: 16px; opacity: 0.3; }
-    .empty .e-text { font-size: 13px; letter-spacing: 1px; }
-
-    /* ── TOAST ── */
-    #toast-container {
-      position: fixed;
-      bottom: 24px;
-      right: 24px;
-      z-index: 9000;
-      display: flex;
-      flex-direction: column;
-      gap: 8px;
-    }
-    .toast {
-      background: var(--card);
-      border: 1px solid var(--border2);
-      border-left: 3px solid var(--purple);
-      padding: 10px 16px;
-      border-radius: 8px;
-      font-size: 12px;
-      max-width: 320px;
-      animation: slideIn 0.2s ease;
-    }
-    @keyframes slideIn { from { transform: translateX(20px); opacity: 0; } to { transform: none; opacity: 1; } }
-
-    /* ── LAST UPDATED BAR ── */
-    .bottom-bar {
-      background: var(--bg2);
-      border-top: 1px solid var(--border);
-      padding: 8px 24px;
-      font-size: 10px;
-      color: var(--muted);
-      letter-spacing: 1px;
-      display: flex;
-      gap: 24px;
-    }
-
-    /* ── BET365 SNIPER SECTION ── */
-    .bet365-sniper {
-      margin-top: 16px;
-      background: var(--bg2);
-      border: 1px solid var(--border2);
-      border-radius: 8px;
-      padding: 14px 18px;
-    }
-    .bet365-sniper-title {
-      font-size: 10px;
-      color: var(--orange);
-      letter-spacing: 3px;
-      text-transform: uppercase;
-      margin-bottom: 14px;
-    }
-
-    /* URL input row */
-    .b365-url-row {
-      display: flex;
-      gap: 8px;
-      margin-bottom: 14px;
-    }
-    .b365-url-input {
-      flex: 1;
-      background: var(--bg);
-      border: 1px solid var(--border2);
-      border-radius: 6px;
-      padding: 8px 12px;
-      color: var(--text);
-      font-family: inherit;
-      font-size: 11px;
-      letter-spacing: 0.5px;
-    }
-    .b365-url-input:focus { outline: none; border-color: var(--orange); }
-    .b365-url-input::placeholder { color: var(--muted); }
-    .b365-fetch-btn {
-      padding: 8px 18px;
-      background: rgba(250,179,135,0.08);
-      border: 1px solid rgba(250,179,135,0.5);
-      border-radius: 6px;
-      color: var(--orange);
-      font-family: inherit;
-      font-size: 11px;
-      letter-spacing: 1px;
-      cursor: pointer;
-      white-space: nowrap;
-      transition: all 0.15s;
-    }
-    .b365-fetch-btn:hover { background: rgba(250,179,135,0.18); box-shadow: 0 0 10px rgba(250,179,135,0.2); }
-    .b365-fetch-btn:disabled { opacity: 0.4; cursor: not-allowed; }
-
-    /* Sniper Target box */
-    .sniper-target {
-      background: linear-gradient(135deg, rgba(250,179,135,0.06), rgba(243,139,168,0.04));
-      border: 1px solid rgba(250,179,135,0.35);
-      border-radius: 8px;
-      padding: 16px 20px;
-      margin-bottom: 14px;
-      display: flex;
-      align-items: center;
-      gap: 24px;
-    }
-    .sniper-target.waiting {
-      border-style: dashed;
-      border-color: var(--border2);
-      justify-content: center;
-      padding: 18px;
-    }
-    .st-badge {
-      font-size: 9px;
-      color: var(--orange);
-      letter-spacing: 3px;
-      text-transform: uppercase;
-      margin-bottom: 6px;
-    }
-    .st-line {
-      font-size: 20px;
-      font-weight: 700;
-      color: var(--yellow);
-      letter-spacing: 1px;
-    }
-    .st-bet {
-      font-size: 12px;
-      font-weight: 600;
-      margin-top: 4px;
-      letter-spacing: 1px;
-    }
-    .st-bet.home { color: var(--red); }
-    .st-bet.away { color: var(--blue); }
-    .st-basis {
-      font-size: 11px;
-      color: var(--muted);
-      line-height: 1.7;
-    }
-    .st-odds-block {
-      margin-left: auto;
+      color: var(--purple);
+      min-width: 40px;
       text-align: right;
     }
-    .st-odds-label { font-size: 10px; color: var(--muted); letter-spacing: 2px; margin-bottom: 4px; }
-    .st-odds-val {
-      font-size: 30px;
-      font-weight: 700;
-      color: var(--text);
-    }
-    .st-odds-val.value-good { color: var(--green); }
-    .st-odds-val.value-ok   { color: var(--yellow); }
-    .st-stars { font-size: 12px; color: var(--orange); margin-top: 2px; }
 
-    /* All lines table */
-    .hcap-table-wrap { overflow-x: auto; }
-    .hcap-table {
-      width: 100%;
-      border-collapse: collapse;
-      font-size: 12px;
-    }
-    .hcap-table th {
-      background: var(--bg);
-      color: var(--muted);
-      font-size: 10px;
-      letter-spacing: 2px;
-      text-transform: uppercase;
-      padding: 6px 12px;
-      text-align: left;
+    /* ── FACTORS ── */
+    .factor-row {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 8px 0;
       border-bottom: 1px solid var(--border);
     }
-    .hcap-table td {
-      padding: 6px 12px;
-      border-bottom: 1px solid rgba(30,37,56,0.4);
+    .factor-row:last-child { border-bottom: none; }
+    .factor-name {
+      font-size: 11px;
+      color: var(--muted);
+      min-width: 90px;
     }
-    .hcap-table tr:last-child td { border-bottom: none; }
-    .hcap-table tr:hover td { background: rgba(255,255,255,0.015); }
-    .hcap-table tr.target-row td { background: rgba(250,179,135,0.07); }
-    .hcap-table tr.target-row td:first-child { border-left: 2px solid var(--orange); }
-    .hcap-table .hc-neg { color: var(--red); font-weight: 600; }
-    .hcap-table .hc-pos { color: var(--blue); font-weight: 600; }
-    .target-tag {
-      font-size: 9px;
-      padding: 1px 5px;
-      background: rgba(250,179,135,0.18);
-      border: 1px solid var(--orange);
-      border-radius: 3px;
-      color: var(--orange);
+    .factor-val {
+      font-size: 11px;
+      color: var(--text);
+      flex: 1;
+    }
+    .factor-dir {
+      font-size: 11px;
+      font-weight: 600;
+      min-width: 60px;
+      text-align: right;
+    }
+    .dir-home  { color: var(--green); }
+    .dir-away  { color: var(--orange); }
+    .dir-neutral { color: var(--muted); }
+
+    /* ── HISTORY ── */
+    .hist-row {
+      display: grid;
+      grid-template-columns: 80px 1fr 80px 80px 60px;
+      gap: 8px;
+      padding: 8px 0;
+      font-size: 11px;
+      border-bottom: 1px solid var(--border);
+      align-items: center;
+    }
+    .hist-row:last-child { border-bottom: none; }
+    .hist-row.header { color: var(--muted); font-size: 10px; letter-spacing: 1px; }
+    .hist-date  { color: var(--muted); }
+    .hist-match { color: var(--text); }
+    .hist-signal { color: var(--blue); }
+    .hist-result { color: var(--muted); }
+    .hist-pnl.win  { color: var(--green); }
+    .hist-pnl.lose { color: var(--red); }
+    .hist-pnl.pending { color: var(--muted); }
+
+    /* ── STATS ROW ── */
+    .stats-row {
+      display: flex;
+      gap: 24px;
+      padding-top: 12px;
+      margin-top: 12px;
+      border-top: 1px solid var(--border);
+    }
+    .stat-item { display: flex; flex-direction: column; gap: 2px; }
+    .stat-label { font-size: 10px; color: var(--muted); letter-spacing: 1px; }
+    .stat-value { font-size: 16px; font-weight: 700; }
+    .stat-value.green  { color: var(--green); }
+    .stat-value.yellow { color: var(--yellow); }
+    .stat-value.blue   { color: var(--blue); }
+
+    /* ── RESULT INPUT ── */
+    .result-form {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+    .result-form input {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      color: var(--text);
+      font-family: inherit;
+      font-size: 14px;
+      padding: 8px 12px;
+      border-radius: 4px;
+      width: 60px;
+      text-align: center;
+    }
+    .result-form input:focus { outline: none; border-color: var(--purple); }
+    .btn {
+      background: transparent;
+      border: 1px solid var(--purple);
+      color: var(--purple);
+      font-family: inherit;
+      font-size: 11px;
       letter-spacing: 1px;
-      margin-left: 6px;
-      vertical-align: middle;
+      padding: 8px 16px;
+      border-radius: 4px;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    .btn:hover { background: rgba(203,166,247,0.1); }
+    .btn.refresh { border-color: var(--blue); color: var(--blue); }
+    .btn.refresh:hover { background: rgba(137,180,250,0.1); }
+
+    .result-label { font-size: 11px; color: var(--muted); }
+
+    /* ── EMPTY / ERROR ── */
+    .empty {
+      text-align: center;
+      padding: 40px;
+      color: var(--muted);
+      font-size: 13px;
     }
 
-    /* scrollbar */
-    ::-webkit-scrollbar { width: 6px; height: 6px; }
-    ::-webkit-scrollbar-track { background: var(--bg); }
-    ::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 3px; }
-    ::-webkit-scrollbar-thumb:hover { background: var(--muted); }
+    /* ── WEIGHTS ── */
+    .weight-row {
+      display: flex;
+      justify-content: space-between;
+      font-size: 11px;
+      padding: 4px 0;
+      color: var(--muted);
+    }
+    .weight-row span:last-child { color: var(--blue); }
+
+    /* ── STATUS BAR ── */
+    .status-bar {
+      width: 100%;
+      max-width: 720px;
+      display: flex;
+      justify-content: space-between;
+      font-size: 10px;
+      color: var(--muted);
+      padding: 8px 0;
+    }
+    #status-msg { color: var(--green); }
   </style>
 </head>
 <body>
 
-<header>
-  <div class="logo">
-    <span class="spade">♠</span>CRAYXUS<span class="slash"> // </span>SOCCER SNIPER
-  </div>
-  <div class="header-right">
-    <span id="live-indicator" class="live-dot offline">OFFLINE</span>
-    <span id="header-time" style="font-size:11px;letter-spacing:1px;"></span>
-  </div>
-</header>
-
-<main>
-
-  <!-- SNIPER SIGNAL CARD -->
-  <div class="sniper-card" id="sniper-card">
-    <div>
-      <div class="sniper-label">▶ TODAY'S SNIPER TARGET</div>
-      <div class="sniper-match" id="sniper-match">-- 等待数据 --</div>
-      <div class="sniper-meta" id="sniper-meta">扫描中...</div>
-    </div>
-    <div class="momentum-bar-wrap">
-      <div class="momentum-label">MOMENTUM <span id="sniper-momentum-val">0</span></div>
-      <div class="momentum-track">
-        <div class="momentum-fill" id="sniper-momentum-fill" style="width:0%"></div>
-      </div>
-    </div>
-    <div class="sniper-signal">
-      <div class="sniper-direction neutral" id="sniper-direction">---</div>
-      <div class="sniper-meta" id="sniper-signal-label">等待信号</div>
-    </div>
-  </div>
-
-  <!-- STATS ROW -->
-  <div class="stats-row">
-    <div class="stat-card">
-      <div class="sv green" id="stat-matches">--</div>
-      <div class="sl">TRACKED MATCHES</div>
-    </div>
-    <div class="stat-card alert-card">
-      <div class="sv" id="stat-alerts">--</div>
-      <div class="sl">ALERTS FIRED</div>
-    </div>
-    <div class="stat-card">
-      <div class="sv blue" id="stat-top-heat">--</div>
-      <div class="sl">TOP HEAT SCORE</div>
-    </div>
-    <div class="stat-card">
-      <div class="sv yellow" id="stat-last">--</div>
-      <div class="sl">LAST SCAN</div>
-    </div>
-    <div class="stat-card">
-      <div class="sv" id="stat-next" style="color:var(--purple)">--</div>
-      <div class="sl">NEXT SCAN IN</div>
-    </div>
-  </div>
-
-  <!-- TOOLBAR -->
-  <div class="toolbar">
-    <span style="font-size:10px;color:var(--muted);letter-spacing:2px;">▶ MATCHES</span>
-    <button class="btn primary" onclick="refreshData()">⟳ REFRESH</button>
-    <button class="btn" onclick="triggerScan()">⚡ SCAN NOW</button>
-    <div class="toolbar-right">
-      <span class="countdown" id="countdown-display"></span>
-    </div>
-  </div>
-
-  <!-- MATCHES LIST -->
-  <div class="matches-grid" id="matches-container">
-    <div class="empty">
-      <div class="e-icon">♠</div>
-      <div class="e-text">LOADING DATA...</div>
-    </div>
-  </div>
-
-</main>
-
-<div class="bottom-bar">
-  <span>CRAYXUS ENGINE v2.0</span>
-  <span id="bottom-updated">LAST UPDATED: --</span>
-  <span>UPSERT MODE: ALL RECORDS RETAINED UNTIL KICKOFF</span>
+<div class="header">
+  <div class="logo">CRAYXUS SIGNAL</div>
+  <div class="version" id="analyzed-at">--</div>
 </div>
 
-<div id="toast-container"></div>
+<!-- TODAY'S PICK -->
+<div class="card" id="card-match">
+  <div class="card-label">TODAY'S PICK</div>
+  <div id="match-content">
+    <div class="empty">加载中...</div>
+  </div>
+</div>
+
+<!-- FACTORS -->
+<div class="card" id="card-factors" style="display:none">
+  <div class="card-label">FACTOR BREAKDOWN</div>
+  <div id="factors-content"></div>
+</div>
+
+<!-- RESULT INPUT -->
+<div class="card" id="card-result" style="display:none">
+  <div class="card-label">RECORD RESULT</div>
+  <div class="result-form">
+    <span class="result-label">比分</span>
+    <input type="number" id="home-score" placeholder="主" min="0" max="20" />
+    <span class="result-label">:</span>
+    <input type="number" id="away-score" placeholder="客" min="0" max="20" />
+    <button class="btn" onclick="submitResult()">CONFIRM</button>
+    <span id="result-msg" style="font-size:11px; color:var(--green); margin-left:8px;"></span>
+  </div>
+</div>
+
+<!-- HISTORY -->
+<div class="card" id="card-history" style="display:none">
+  <div class="card-label">SIGNAL HISTORY</div>
+  <div id="stats-content"></div>
+  <div id="history-content"></div>
+</div>
+
+<!-- FACTOR WEIGHTS -->
+<div class="card" id="card-weights" style="display:none">
+  <div class="card-label">FACTOR WEIGHTS (AUTO-TUNED)</div>
+  <div id="weights-content"></div>
+</div>
+
+<div class="status-bar">
+  <span id="status-msg">初始化...</span>
+  <button class="btn refresh" onclick="loadSignal()">REFRESH</button>
+</div>
 
 <script>
-  let allData = null;
-  let nextScanTime = null;
-  let countdownTimer = null;
+  let currentMatchKey = null;
+  let currentDirection = null;
+  let signalData = null;
 
-  // ── Clock ──
-  function updateClock() {
-    const now = new Date();
-    document.getElementById('header-time').textContent =
-      now.toLocaleTimeString('zh-CN', { hour12: false });
-  }
-  setInterval(updateClock, 1000);
-  updateClock();
-
-  // ── Toast ──
-  function toast(msg, type='info') {
-    const c = document.getElementById('toast-container');
-    const t = document.createElement('div');
-    t.className = 'toast';
-    t.style.borderLeftColor = type === 'alert' ? 'var(--red)' : type === 'ok' ? 'var(--green)' : 'var(--purple)';
-    t.textContent = msg;
-    c.appendChild(t);
-    setTimeout(() => t.remove(), 6000);
-  }
-
-  // ── Refresh ──
-  async function refreshData() {
+  async function loadSignal() {
+    setStatus('分析中...');
     try {
-      const r = await fetch('/api/data');
-      const data = await r.json();
-      allData = data;
-      renderAll(data);
-      updateScanStatus(data.scan_status);
-    } catch(e) {
-      toast('数据加载失败: ' + e.message, 'alert');
-    }
-  }
-
-  async function triggerScan() {
-    try {
-      const r = await fetch('/api/scan', { method: 'POST' });
+      const r = await fetch('/api/today_signal');
       const d = await r.json();
-      toast(d.message, d.success ? 'ok' : 'alert');
-      if (d.success) setTimeout(refreshData, 3000);
+      signalData = d;
+
+      if (d.error) {
+        document.getElementById('match-content').innerHTML =
+          `<div class="empty">${d.error}</div>`;
+        setStatus(d.error);
+        return;
+      }
+
+      currentMatchKey  = d.match_key;
+      currentDirection = d.direction;
+
+      renderMatch(d);
+      renderFactors(d.factors, d.direction);
+      renderHistory(d.history, d.stats);
+      renderWeights(d.weights_used);
+
+      document.getElementById('card-factors').style.display  = 'block';
+      document.getElementById('card-result').style.display   = 'block';
+      document.getElementById('card-history').style.display  = 'block';
+      document.getElementById('card-weights').style.display  = 'block';
+
+      document.getElementById('analyzed-at').textContent = d.analyzed_at || '';
+      setStatus('已更新');
     } catch(e) {
-      toast('扫描触发失败', 'alert');
+      setStatus('加载失败: ' + e.message);
     }
   }
 
-  // ── Scan Status ──
-  function updateScanStatus(status) {
-    if (!status) return;
-    const ind = document.getElementById('live-indicator');
-    if (status.is_scanning) {
-      ind.className = 'live-dot scanning';
-      ind.textContent = 'SCANNING';
-    } else if (status.error) {
-      ind.className = 'live-dot offline';
-      ind.textContent = 'ERROR';
-    } else {
-      ind.className = 'live-dot';
-      ind.textContent = 'LIVE';
-    }
-    if (status.next_scan) {
-      nextScanTime = new Date(status.next_scan.replace(' ', 'T'));
-      startCountdown();
-    }
-    const lastEl = document.getElementById('stat-last');
-    if (status.last_scan) {
-      lastEl.textContent = status.last_scan.split(' ')[1] || status.last_scan;
-    }
+  function renderMatch(d) {
+    const line     = d.best_line || {};
+    const hc       = line.handicap || '--';
+    const odds     = line.odds     || '--';
+    const isHome   = d.direction === 'home';
+    const isCold   = d.signal_type === '背离爆冷';
+    const boxClass = isCold ? 'cold' : (isHome ? 'home' : 'away');
+    const typeClass = isCold ? 'cold' : (d.signal_type === '水位跟随' ? 'water' : 'normal');
+
+    const conf = d.confidence || 0;
+
+    document.getElementById('match-content').innerHTML = `
+      <div class="match-meta">${d.league || ''} &nbsp;|&nbsp; ${(d.match_time||'').replace('\n',' ')}</div>
+      <div class="match-teams">
+        <span>${d.home}</span>
+        <span class="vs">vs</span>
+        <span>${d.away}</span>
+      </div>
+      <div class="signal-box ${boxClass}">
+        <div class="signal-type ${typeClass}">${d.signal_type}</div>
+        <div class="signal-team">${d.direction_team}</div>
+        <div class="signal-line">${hc}</div>
+        <div class="signal-odds">@ ${odds}</div>
+        <div class="confidence-bar-wrap">
+          <div class="confidence-bar-bg">
+            <div class="confidence-bar-fill" style="width:${conf}%"></div>
+          </div>
+          <div class="confidence-label">${conf}%</div>
+        </div>
+      </div>
+    `;
   }
 
-  function startCountdown() {
-    if (countdownTimer) clearInterval(countdownTimer);
-    countdownTimer = setInterval(() => {
-      if (!nextScanTime) return;
-      const diff = Math.max(0, Math.floor((nextScanTime - Date.now()) / 1000));
-      const m = Math.floor(diff / 60);
-      const s = diff % 60;
-      const txt = `${m}:${s.toString().padStart(2,'0')}`;
-      document.getElementById('stat-next').textContent = txt;
-      document.getElementById('countdown-display').textContent = `NEXT SCAN ${txt}`;
-    }, 1000);
+  function renderFactors(f, direction) {
+    if (!f) return;
+
+    const lc = f.line_compression || {};
+    const w  = f.water            || {};
+    const dr = f.drift            || {};
+
+    const dirClass = d => d === 'home' ? 'dir-home' : d === 'away' ? 'dir-away' : 'dir-neutral';
+    const teamName = (dir, home, away) => dir === 'home' ? home : dir === 'away' ? away : '中立';
+
+    const sData = signalData || {};
+    const home  = sData.home || '主';
+    const away  = sData.away || '客';
+
+    const rows = [
+      {
+        name: '盘口压缩',
+        val:  `${lc.early_hc || '--'} → ${lc.latest_hc || '--'}  (${lc.delta >= 0 ? '+' : ''}${lc.delta || 0}步)`,
+        dir:  lc.direction,
+        label: teamName(lc.direction, home, away),
+      },
+      {
+        name: '水位偏压',
+        val:  `${home} ${w.home_odds || '--'} / ${away} ${w.away_odds || '--'}  偏差 ${w.imbalance || 0}`,
+        dir:  w.direction,
+        label: (w.aligned ? '同向' : '背离') + ' ' + teamName(w.direction, home, away),
+      },
+      {
+        name: '水位连贯',
+        val:  `${(dr.consistency || 0) * 100}%  共${dr.records || 0}条记录  总漂移${dr.total_drift || 0}`,
+        dir:  direction,
+        label: `${Math.round((dr.consistency || 0) * 100)}%`,
+      },
+    ];
+
+    document.getElementById('factors-content').innerHTML = rows.map(r => `
+      <div class="factor-row">
+        <div class="factor-name">${r.name}</div>
+        <div class="factor-val">${r.val}</div>
+        <div class="factor-dir ${dirClass(r.dir)}">${r.label}</div>
+      </div>
+    `).join('');
   }
 
-  // ── Render All ──
-  function renderAll(data) {
+  function renderHistory(history, stats) {
     // Stats
-    document.getElementById('stat-matches').textContent = data.total_matches || 0;
-    document.getElementById('stat-alerts').textContent = data.alert_count || 0;
-    document.getElementById('bottom-updated').textContent = 'LAST UPDATED: ' + (data.last_updated || '--');
+    const s = stats || {};
+    document.getElementById('stats-content').innerHTML = `
+      <div class="stats-row">
+        <div class="stat-item">
+          <div class="stat-label">RECORD</div>
+          <div class="stat-value blue">${s.wins || 0} / ${s.total || 0}</div>
+        </div>
+        <div class="stat-item">
+          <div class="stat-label">WIN RATE</div>
+          <div class="stat-value ${(s.win_rate||0) >= 55 ? 'green' : 'yellow'}">${s.win_rate || 0}%</div>
+        </div>
+        <div class="stat-item">
+          <div class="stat-label">TOTAL P&L</div>
+          <div class="stat-value ${(s.total_pnl||0) >= 0 ? 'green' : ''}" style="${(s.total_pnl||0) < 0 ? 'color:var(--red)' : ''}">
+            ${(s.total_pnl||0) >= 0 ? '+' : ''}${s.total_pnl || 0}u
+          </div>
+        </div>
+      </div>
+    `;
 
-    const matches = data.matches || [];
-    const topHeat = matches.length > 0 ? (matches[0].heat_score || 0).toFixed(1) : '--';
-    document.getElementById('stat-top-heat').textContent = topHeat;
-
-    // Sniper card
-    renderSniperCard(matches);
-
-    // Match cards
-    renderMatches(matches);
-  }
-
-  // ── Sniper Card ──
-  function renderSniperCard(matches) {
-    const top = matches.find(m => m.rank === 1) || matches[0];
-    if (!top) return;
-
-    document.getElementById('sniper-match').textContent =
-      `${top.home || '?'} vs ${top.away || '?'}`;
-    document.getElementById('sniper-meta').textContent =
-      `[${top.league || '--'}] ${top.match_time || ''} | HEAT: ${top.heat_score || 0}`;
-
-    const sig = top.crayxus_signal || {};
-    const mom = sig.momentum || 0;
-    document.getElementById('sniper-momentum-val').textContent = mom;
-    document.getElementById('sniper-momentum-fill').style.width = mom + '%';
-
-    const dirEl = document.getElementById('sniper-direction');
-    const labEl = document.getElementById('sniper-signal-label');
-    const dir = sig.direction || 'neutral';
-    dirEl.className = 'sniper-direction ' + dir;
-
-    if (dir === 'home') {
-      dirEl.textContent = '▲ HOME';
-    } else if (dir === 'away') {
-      dirEl.textContent = '▲ AWAY';
-    } else {
-      dirEl.textContent = '― WAIT';
-    }
-    labEl.textContent = sig.label || '等待信号';
-  }
-
-  // ── Match Cards ──
-  function renderMatches(matches) {
-    const container = document.getElementById('matches-container');
-    if (!matches || matches.length === 0) {
-      container.innerHTML = `<div class="empty"><div class="e-icon">♠</div><div class="e-text">NO MATCHES TRACKED YET</div></div>`;
+    // Table
+    if (!history || !history.length) {
+      document.getElementById('history-content').innerHTML =
+        '<div style="font-size:11px;color:var(--muted);padding-top:12px">暂无历史记录</div>';
       return;
     }
 
-    container.innerHTML = matches.map((m, idx) => buildMatchCard(m, idx)).join('');
-  }
-
-  function buildMatchCard(m, idx) {
-    const rank = m.rank || (idx + 1);
-    const rankClass = rank <= 3 ? 'r' + rank : 'rn';
-    const cardClass = rank === 1 ? 'rank-1' : rank === 2 ? 'rank-2' : rank === 3 ? 'rank-3' : '';
-    const alertClass = m.alert ? 'has-alert' : '';
-    const sig = m.crayxus_signal || {};
-    const dir = sig.direction || 'neutral';
-    const mom = sig.momentum || 0;
-
-    const signalPillText = dir === 'home' ? '▲ HOME' : dir === 'away' ? '▲ AWAY' : '― HOLD';
-    const allRecords = m.all_records || [];
-    const recordsToShow = allRecords.slice(0, 12);
-    const hasMore = allRecords.length > 12;
-
-    const alertBadge = m.alert ? `<span class="alert-badge">⚠ ALERT</span>` : '';
-
-    const recordsHTML = recordsToShow.map(r => `
-      <tr class="${r.in_window ? 'in-window' : ''}">
-        <td style="color:var(--muted)">${r.time || '--'}</td>
-        <td class="odds-home">${r.home_odds ?? '--'}</td>
-        <td class="odds-hcap">${r.handicap || '--'}</td>
-        <td class="odds-away">${r.away_odds ?? '--'}</td>
-        <td class="${r.status === '即' ? 'status-ji' : 'status-zao'}">${r.status || '--'}</td>
-      </tr>
-    `).join('');
-
-    const moreBtn = hasMore ? `<button class="more-records-btn" onclick="showMoreRecords(event,'${m.match_id}')">+ ${allRecords.length - 12} MORE RECORDS</button>` : '';
-
-    const bet365HTML = buildBet365Section(m);
-
-    return `
-    <div class="match-card ${cardClass} ${alertClass}" id="card-${m.match_id}">
-      <div class="match-header" onclick="toggleCard('${m.match_id}')">
-        <div class="rank-badge ${rankClass}">#${rank}</div>
-        <div class="match-teams">
-          <div class="teams-name">${m.home || '?'} <span style="color:var(--muted)">vs</span> ${m.away || '?'} ${alertBadge}</div>
-          <div class="teams-meta">[${m.league || '--'}] ${m.match_time || ''} | ${allRecords.length} records | ${m.minutes_to_kickoff != null ? m.minutes_to_kickoff + 'min to KO' : '--'}</div>
-        </div>
-        <div class="momentum-mini">
-          <div class="momentum-mini-val">MOM ${mom}</div>
-          <div class="momentum-mini-track">
-            <div class="momentum-mini-fill" style="width:${mom}%"></div>
-          </div>
-        </div>
-        <div class="signal-pill ${dir}">${signalPillText}</div>
-        <div class="match-heat">
-          <div class="heat-score">${(m.heat_score || 0).toFixed(0)}</div>
-          <div class="heat-label">HEAT</div>
-        </div>
-        <div class="chevron" id="chev-${m.match_id}">▶</div>
-      </div>
-      <div class="match-body" id="body-${m.match_id}">
-        <!-- Signal Detail -->
-        <div class="signal-detail">
-          <div class="sd-item">
-            <div class="sd-k">DIRECTION</div>
-            <div class="sd-v ${dir === 'home' ? 'down' : dir === 'away' ? 'blue' : ''}">${sig.label || '等待'}</div>
-          </div>
-          <div class="sd-item">
-            <div class="sd-k">HOME CHANGE</div>
-            <div class="sd-v ${(sig.home_change||0) < 0 ? 'down' : 'up'}">${sig.home_change != null ? (sig.home_change > 0 ? '+' : '') + sig.home_change : '--'}</div>
-          </div>
-          <div class="sd-item">
-            <div class="sd-k">VELOCITY /hr</div>
-            <div class="sd-v">${sig.velocity ?? '--'}</div>
-          </div>
-          <div class="sd-item">
-            <div class="sd-k">UNIDIRECTIONAL</div>
-            <div class="sd-v ${sig.is_unidirectional ? 'down' : ''}">${sig.is_unidirectional ? '✓ YES' : '✗ NO'}</div>
-          </div>
-          <div class="sd-item">
-            <div class="sd-k">SAMPLES</div>
-            <div class="sd-v">${sig.sample_count ?? allRecords.length}</div>
-          </div>
-          <div class="sd-item">
-            <div class="sd-k">CROW RECORDS</div>
-            <div class="sd-v yellow">${m.crow_record_count || 0} × ${m.time_weight || 1}x</div>
-          </div>
-        </div>
-
-        <!-- Odds Table -->
-        <div class="table-wrap">
-          <table class="odds-table">
-            <thead>
-              <tr>
-                <th>TIME</th>
-                <th>HOME ODDS</th>
-                <th>HANDICAP</th>
-                <th>AWAY ODDS</th>
-                <th>STATUS</th>
-              </tr>
-            </thead>
-            <tbody id="tbody-${m.match_id}">${recordsHTML}</tbody>
-          </table>
-          ${moreBtn}
-        </div>
-
-        ${bet365HTML}
-      </div>
-    </div>`;
-  }
-
-  // ── Toggle card ──
-  function toggleCard(matchId) {
-    const body = document.getElementById('body-' + matchId);
-    const header = body.previousElementSibling;
-    const chev = document.getElementById('chev-' + matchId);
-    const isOpen = body.classList.contains('open');
-    body.classList.toggle('open', !isOpen);
-    header.classList.toggle('expanded', !isOpen);
-    chev.classList.toggle('open', !isOpen);
-  }
-
-  // ── Show more records ──
-  function showMoreRecords(e, matchId) {
-    e.stopPropagation();
-    if (!allData) return;
-    const match = allData.matches.find(m => m.match_id === matchId);
-    if (!match) return;
-    const tbody = document.getElementById('tbody-' + matchId);
-    const allRecords = match.all_records || [];
-    tbody.innerHTML = allRecords.map(r => `
-      <tr class="${r.in_window ? 'in-window' : ''}">
-        <td style="color:var(--muted)">${r.time || '--'}</td>
-        <td class="odds-home">${r.home_odds ?? '--'}</td>
-        <td class="odds-hcap">${r.handicap || '--'}</td>
-        <td class="odds-away">${r.away_odds ?? '--'}</td>
-        <td class="${r.status === '即' ? 'status-ji' : 'status-zao'}">${r.status || '--'}</td>
-      </tr>
-    `).join('');
-    e.target.remove();
-  }
-
-  // ── Bet365 Sniper Logic ──
-
-  // 根据 Crow* 信号方向 + Crow* 当前主线，从 bet365 备选盘口找最佳价值盘
-  function findSniperLine(handicaps, direction, crowHcStr) {
-    if (!handicaps || handicaps.length === 0 || direction === 'neutral') return null;
-
-    // 解析 Crow* 当前主线数值（取第一个数字）
-    let crowHc = 0;
-    if (crowHcStr) {
-      const m = crowHcStr.match(/[-+]?\d+\.?\d*/);
-      if (m) crowHc = parseFloat(m[0]);
-    }
-
-    let best = null, bestScore = -Infinity;
-
-    for (const h of handicaps) {
-      const odds = parseFloat(direction === 'away' ? h.away_odds : h.home_odds) || 0;
-      const hcStr = direction === 'away' ? h.away_handicap : h.home_handicap;
-      const m2 = (hcStr || '').match(/[-+]?\d+\.?\d*/);
-      const hcNum = m2 ? parseFloat(m2[0]) : 0;
-
-      // 只考虑赔率合理范围
-      if (odds < 1.72 || odds > 2.15) continue;
-
-      // 评分：距最优赔率1.90近 + 距Crow*主线近
-      const oddsDist = Math.abs(odds - 1.90);
-      const hcDist = Math.abs(hcNum - crowHc);
-      const score = 10 - oddsDist * 4 - hcDist * 1.5;
-
-      if (score > bestScore) { bestScore = score; best = { ...h, _odds: odds, _hcNum: hcNum }; }
-    }
-    return best;
-  }
-
-  // 构建 bet365 section HTML（含 URL 输入 + sniper target + 全部盘口表）
-  function buildBet365Section(m) {
-    const matchId = m.match_id;
-    const handicaps = m.bet365_handicaps || [];
-    const sig = m.crayxus_signal || {};
-    const dir = sig.direction || 'neutral';
-    const allRec = m.all_records || [];
-
-    // 最新 Crow* 主线（最后一条记录）
-    const latestRec = allRec.length > 0 ? allRec[allRec.length - 1] : {};
-    const crowHc = latestRec.handicap || '';
-
-    const sniperLine = findSniperLine(handicaps, dir, crowHc);
-
-    // ── Sniper Target box ──
-    let targetHTML = '';
-    if (sniperLine) {
-      const odds = sniperLine._odds;
-      const hcap = dir === 'away' ? sniperLine.away_handicap : sniperLine.home_handicap;
-      const valueClass = odds >= 1.88 && odds <= 1.96 ? 'value-good' : 'value-ok';
-      const stars = odds >= 1.88 && odds <= 1.96 ? '★★★' : odds >= 1.82 ? '★★☆' : '★☆☆';
-      targetHTML = `
-        <div class="sniper-target">
-          <div>
-            <div class="st-badge">⚡ SNIPER TARGET</div>
-            <div class="st-line">${hcap}</div>
-            <div class="st-bet ${dir}">BET ${dir.toUpperCase()}</div>
-          </div>
-          <div class="st-basis">
-            <div>信号: ${sig.label || dir}</div>
-            <div>Crow* 主线: ${crowHc || '--'}</div>
-            <div>动量: ${sig.momentum || 0}</div>
-          </div>
-          <div class="st-odds-block">
-            <div class="st-odds-label">ODDS</div>
-            <div class="st-odds-val ${valueClass}">${odds.toFixed(3)}</div>
-            <div class="st-stars">${stars}</div>
-          </div>
-        </div>`;
-    } else if (handicaps.length > 0) {
-      const reason = dir === 'neutral' ? '等待 Crow* 方向信号...' : '当前无价值盘口（赔率超出合理范围）';
-      targetHTML = `<div class="sniper-target waiting"><span style="font-size:11px;color:var(--muted);letter-spacing:1px">${reason}</span></div>`;
-    } else {
-      targetHTML = `<div class="sniper-target waiting"><span style="font-size:11px;color:var(--muted);letter-spacing:1px">⚡ 输入 BET365 链接解锁 SNIPER TARGET</span></div>`;
-    }
-
-    // ── 全部盘口表 ──
-    let tableHTML = '';
-    if (handicaps.length > 0) {
-      const rows = handicaps.map(h => {
-        const isTarget = sniperLine && h === sniperLine;
-        const homeTag = (isTarget && dir === 'home') ? `<span class="target-tag">TARGET</span>` : '';
-        const awayTag = (isTarget && dir === 'away') ? `<span class="target-tag">TARGET</span>` : '';
-        return `
-          <tr class="${isTarget ? 'target-row' : ''}">
-            <td class="hc-neg">${h.home_handicap || '--'}</td>
-            <td>${h.home_odds || '--'}${homeTag}</td>
-            <td class="hc-pos">${h.away_handicap || '--'}</td>
-            <td>${h.away_odds || '--'}${awayTag}</td>
-          </tr>`;
-      }).join('');
-      tableHTML = `
-        <div class="hcap-table-wrap">
-          <table class="hcap-table">
-            <thead><tr>
-              <th>主队盘口</th><th>主队赔率</th>
-              <th>客队盘口</th><th>客队赔率</th>
-            </tr></thead>
-            <tbody>${rows}</tbody>
-          </table>
-        </div>`;
-    }
-
-    const existingUrl = m.bet365_url || '';
-    return `
-      <div class="bet365-sniper" id="b365section-${matchId}">
-        <div class="bet365-sniper-title">▶ BET365 // SNIPER ANALYSIS</div>
-        ${targetHTML}
-        <div class="b365-url-row">
-          <input class="b365-url-input" id="b365url-${matchId}" type="text"
-            placeholder="https://www.bet365.com.au/#/AC/B1/C1/D8/..."
-            value="${existingUrl}">
-          <button class="b365-fetch-btn" id="b365btn-${matchId}"
-            onclick="fetchBet365('${matchId}')">⚡ FETCH</button>
-        </div>
-        ${tableHTML}
+    const header = `
+      <div class="hist-row header">
+        <div>DATE</div>
+        <div>MATCH</div>
+        <div>SIGNAL</div>
+        <div>RESULT</div>
+        <div>P&L</div>
       </div>`;
+
+    const rows = history.map(r => {
+      const pnl = r.correct === true  ? `<div class="hist-pnl win">+${r.pnl}u</div>`
+                : r.correct === false ? `<div class="hist-pnl lose">${r.pnl}u</div>`
+                : `<div class="hist-pnl pending">--</div>`;
+
+      const line = r.best_line ? `${r.best_line.handicap} @${r.best_line.odds}` : '--';
+
+      return `
+        <div class="hist-row">
+          <div class="hist-date">${(r.date||'').slice(5)}</div>
+          <div class="hist-match">${r.home} v ${r.away}</div>
+          <div class="hist-signal">${r.direction_team || '--'}<br><span style="color:var(--muted);font-size:10px">${line}</span></div>
+          <div class="hist-result">${r.result || '--'}</div>
+          ${pnl}
+        </div>`;
+    }).join('');
+
+    document.getElementById('history-content').innerHTML = header + rows;
   }
 
-  // 触发 bet365 抓取
-  async function fetchBet365(matchId) {
-    const input = document.getElementById('b365url-' + matchId);
-    const btn   = document.getElementById('b365btn-' + matchId);
-    const url   = input ? input.value.trim() : '';
-    if (!url) { toast('请先输入 bet365 比赛直链', 'alert'); return; }
+  function renderWeights(w) {
+    if (!w) return;
+    const labels = {
+      line_compression:      '盘口压缩方向',
+      compression_magnitude: '压缩幅度',
+      water_alignment:       '水位对齐',
+      drift_consistency:     '水位连贯性',
+    };
+    document.getElementById('weights-content').innerHTML =
+      Object.entries(w).map(([k, v]) => `
+        <div class="weight-row">
+          <span>${labels[k] || k}</span>
+          <span>${Math.round(v * 100)}%</span>
+        </div>
+      `).join('');
+  }
 
-    const match = allData && allData.matches
-      ? allData.matches.find(m => m.match_id === matchId) : null;
-    if (!match) { toast('找不到比赛数据', 'alert'); return; }
-
-    btn.disabled = true;
-    btn.textContent = 'FETCHING...';
+  async function submitResult() {
+    const h = parseInt(document.getElementById('home-score').value);
+    const a = parseInt(document.getElementById('away-score').value);
+    if (isNaN(h) || isNaN(a)) {
+      document.getElementById('result-msg').textContent = '请输入比分';
+      return;
+    }
+    if (!currentMatchKey) {
+      document.getElementById('result-msg').textContent = '无当前比赛';
+      return;
+    }
 
     try {
-      const resp = await fetch('/api/bet365/fetch_direct', {
+      const r = await fetch('/api/signal_result', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ match_id: matchId, bet365_url: url, home: match.home || '', away: match.away || '' })
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({
+          match_key:  currentMatchKey,
+          home_score: h,
+          away_score: a,
+        }),
       });
-      const data = await resp.json();
+      const d = await r.json();
 
-      if (data.success && data.handicaps && data.handicaps.length > 0) {
-        match.bet365_handicaps = data.handicaps;
-        match.bet365_url = url;
-        // 重渲染 bet365 区域
-        const section = document.getElementById('b365section-' + matchId);
-        if (section) {
-          section.outerHTML = buildBet365Section(match);
-        }
-        toast(`✓ 抓取成功，${data.handicaps.length} 个盘口`, 'ok');
-      } else {
-        toast(data.error || data.message || '抓取失败，请检查链接', 'alert');
-        btn.disabled = false;
-        btn.textContent = '⚡ FETCH';
+      if (d.success) {
+        const rec    = d.record || {};
+        const result = rec.correct === true ? '赢 ' + (rec.pnl >= 0 ? '+' : '') + rec.pnl + 'u'
+                     : rec.correct === false ? '输 -1u'
+                     : '退水';
+        document.getElementById('result-msg').textContent = result;
+        document.getElementById('result-msg').style.color =
+          rec.correct ? 'var(--green)' : 'var(--red)';
+        setTimeout(loadSignal, 800);
       }
-    } catch (e) {
-      toast('抓取失败: ' + e.message, 'alert');
-      btn.disabled = false;
-      btn.textContent = '⚡ FETCH';
+    } catch(e) {
+      document.getElementById('result-msg').textContent = '提交失败';
     }
   }
 
-  // ── SSE ──
-  function connectSSE() {
-    const evtSource = new EventSource('/api/stream');
-    evtSource.onopen = () => {
-      document.getElementById('live-indicator').className = 'live-dot';
-      document.getElementById('live-indicator').textContent = 'LIVE';
-    };
-    evtSource.onmessage = (e) => {
-      try {
-        const data = JSON.parse(e.data);
-        if (data.type === 'update') {
-          allData = data;
-          renderAll(data);
-          toast('数据已更新', 'ok');
-        } else if (data.type === 'alert') {
-          toast(`⚠ ALERT: ${data.match} - ${data.reason}`, 'alert');
-        }
-      } catch(err) {}
-    };
-    evtSource.onerror = () => {
-      document.getElementById('live-indicator').className = 'live-dot offline';
-      document.getElementById('live-indicator').textContent = 'RECONNECTING';
-      evtSource.close();
-      setTimeout(connectSSE, 5000);
-    };
+  function setStatus(msg) {
+    document.getElementById('status-msg').textContent = msg;
   }
 
-  // ── Init ──
-  refreshData();
-  connectSSE();
-  setInterval(refreshData, 60000);
+  // 自动刷新
+  loadSignal();
+  setInterval(loadSignal, 60000);
 </script>
 </body>
 </html>

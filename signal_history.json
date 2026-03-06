@@ -1,0 +1,47 @@
+[
+  {
+    "match_key": "2026-03-06_塞尔塔_皇马",
+    "date": "2026-03-06",
+    "home": "塞尔塔",
+    "away": "皇马",
+    "direction": "home",
+    "direction_team": "塞尔塔",
+    "signal_type": "同向确认",
+    "best_line": {
+      "handicap": "0.0, +0.5",
+      "odds": 1.85
+    },
+    "confidence": 62,
+    "factors_snap": {
+      "line_compression": {
+        "early_hc": "受让半球/一球",
+        "latest_hc": "受让平手/半球",
+        "delta": 2,
+        "direction": "home",
+        "size": 2
+      },
+      "water": {
+        "home_odds": 0.89,
+        "away_odds": 1.0,
+        "direction": "home",
+        "imbalance": 0.11,
+        "aligned": true
+      },
+      "drift": {
+        "consistency": 0.73,
+        "total_drift": 0.07,
+        "records": 12
+      }
+    },
+    "weights_snap": {
+      "line_compression": 0.4,
+      "compression_magnitude": 0.25,
+      "water_alignment": 0.2,
+      "drift_consistency": 0.15
+    },
+    "predicted_at": "2026-03-06 16:40:08",
+    "result": null,
+    "correct": null,
+    "pnl": null
+  }
+]

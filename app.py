@@ -522,6 +522,85 @@ def calculate_winning_handicaps(handicaps: list, home_team: str,
     return winning
 
 
+# ─────────────────────────────────────────────
+# Crayxus Signal 接口
+# ─────────────────────────────────────────────
+
+@app.route("/api/today_signal")
+def api_today_signal():
+    """分析今日最热比赛，返回推荐信号"""
+    from analyzer import analyze_match, record_prediction, load_history, get_stats
+
+    data = load_data()
+    matches = data.get("matches", [])
+
+    # 找热度最高且有 bet365 数据的比赛
+    target = None
+    for m in sorted(matches, key=lambda x: x.get("heat_score", 0), reverse=True):
+        if m.get("bet365_handicaps") and m.get("ji_records"):
+            target = m
+            break
+
+    if not target:
+        # 退而求其次：热度最高的比赛（即使没 bet365）
+        for m in sorted(matches, key=lambda x: x.get("heat_score", 0), reverse=True):
+            if m.get("ji_records"):
+                target = m
+                break
+
+    if not target:
+        return jsonify({"error": "暂无可分析数据，请先扫描"})
+
+    bet365_lines = target.get("bet365_handicaps", [])
+    result = analyze_match(target, bet365_lines)
+
+    if "error" not in result:
+        match_key = f"{data.get('last_updated', '')[:10]}_{target.get('home')}_{target.get('away')}"
+        record_prediction(match_key, result)
+        result["match_key"] = match_key
+        result["league"]     = target.get("league", "")
+        result["match_time"] = target.get("match_time", "")
+        result["heat_score"] = target.get("heat_score", 0)
+
+    history = load_history()
+    result["stats"]   = get_stats(history)
+    result["history"] = list(reversed(history[-10:]))
+
+    return jsonify(result)
+
+
+@app.route("/api/signal_result", methods=["POST"])
+def api_signal_result():
+    """录入比赛结果"""
+    from analyzer import record_result, load_history, get_stats
+
+    data      = request.get_json()
+    match_key  = data.get("match_key")
+    home_score = data.get("home_score")
+    away_score = data.get("away_score")
+
+    if not match_key or home_score is None or away_score is None:
+        return jsonify({"success": False, "message": "缺少参数"})
+
+    rec   = record_result(match_key, int(home_score), int(away_score))
+    stats = get_stats(__import__("analyzer").load_history())
+
+    return jsonify({"success": True, "record": rec, "stats": stats})
+
+
+@app.route("/api/signal_history")
+def api_signal_history():
+    """获取历史记录和统计"""
+    from analyzer import load_history, get_stats
+
+    history = load_history()
+    return jsonify({
+        "history": list(reversed(history)),
+        "stats":   get_stats(history),
+        "weights": __import__("analyzer").load_weights(),
+    })
+
+
 @app.route("/api/stream")
 def api_stream():
     """SSE 实时推送"""
