@@ -364,6 +364,103 @@ def tune_weights(history: list) -> dict:
     return weights
 
 
+def reanalyze_history(history: list) -> dict:
+    """
+    对历史所有已结算记录进行因子提炼分析
+    找出哪些因子组合胜率最高，输出规律
+    """
+    settled = [r for r in history if r.get("correct") is not None and r.get("factors_snap")]
+    if len(settled) < 3:
+        return {"error": "已结算记录不足（需要至少3场）", "settled": len(settled)}
+
+    wins   = [r for r in settled if r.get("correct") is True]
+    losses = [r for r in settled if r.get("correct") is False]
+
+    def avg_factors(records):
+        if not records:
+            return {}
+        comp_sizes   = [r["factors_snap"].get("line_compression", {}).get("size", 0)        for r in records]
+        consistencies= [r["factors_snap"].get("drift", {}).get("consistency", 0)             for r in records]
+        imbalances   = [r["factors_snap"].get("water", {}).get("imbalance", 0)               for r in records]
+        aligned_cnt  = sum(1 for r in records if r["factors_snap"].get("water", {}).get("aligned", False))
+        cold_cnt     = sum(1 for r in records if r.get("signal_type") == "背离爆冷")
+        return {
+            "avg_compression_size":  round(sum(comp_sizes)    / len(comp_sizes),    2),
+            "avg_consistency":       round(sum(consistencies) / len(consistencies), 2),
+            "avg_water_imbalance":   round(sum(imbalances)    / len(imbalances),    3),
+            "aligned_rate":          round(aligned_cnt / len(records), 2),
+            "cold_signal_rate":      round(cold_cnt    / len(records), 2),
+            "count":                 len(records),
+        }
+
+    win_avg  = avg_factors(wins)
+    loss_avg = avg_factors(losses)
+
+    # 规律提炼：找出赢场 vs 输场的关键差异
+    patterns = []
+    if wins and losses:
+        wc = win_avg.get("avg_compression_size", 0)
+        lc = loss_avg.get("avg_compression_size", 0)
+        if wc - lc >= 0.5:
+            patterns.append(f"赢场盘口压缩平均{wc}步 > 输场{lc}步，压缩幅度越大越可靠")
+
+        wi = win_avg.get("avg_consistency", 0)
+        li = loss_avg.get("avg_consistency", 0)
+        if wi - li >= 0.1:
+            patterns.append(f"赢场水位连贯性{int(wi*100)}% > 输场{int(li*100)}%，连贯性越高越准")
+
+        wa = win_avg.get("avg_water_imbalance", 0)
+        la = loss_avg.get("avg_water_imbalance", 0)
+        if wa - la >= 0.02:
+            patterns.append(f"赢场水位偏差{wa} > 输场{la}，偏差越大信号越强")
+
+        if win_avg.get("aligned_rate", 0) > loss_avg.get("aligned_rate", 0) + 0.15:
+            patterns.append("水位与盘口同向时胜率更高")
+        elif loss_avg.get("aligned_rate", 0) > win_avg.get("aligned_rate", 0) + 0.15:
+            patterns.append("背离信号（水位与盘口反向）胜率更高，应加大背离权重")
+
+    # 按信心指数分段看胜率
+    confidence_buckets = {"50-65": [], "65-80": [], "80+": []}
+    for r in settled:
+        c = r.get("confidence", 0)
+        if c >= 80:
+            confidence_buckets["80+"].append(r.get("correct"))
+        elif c >= 65:
+            confidence_buckets["65-80"].append(r.get("correct"))
+        else:
+            confidence_buckets["50-65"].append(r.get("correct"))
+
+    confidence_stats = {}
+    for bucket, results in confidence_buckets.items():
+        if results:
+            wr = round(sum(1 for x in results if x is True) / len(results) * 100, 1)
+            confidence_stats[bucket] = {"count": len(results), "win_rate": wr}
+
+    return {
+        "total_settled": len(settled),
+        "win_avg":        win_avg,
+        "loss_avg":       loss_avg,
+        "patterns":       patterns if patterns else ["数据不足，暂无规律"],
+        "confidence_stats": confidence_stats,
+        "recommendation": _suggest_weight_adjustment(win_avg, loss_avg),
+    }
+
+
+def _suggest_weight_adjustment(win_avg: dict, loss_avg: dict) -> str:
+    if not win_avg or not loss_avg:
+        return "数据不足"
+
+    tips = []
+    if win_avg.get("avg_compression_size", 0) > loss_avg.get("avg_compression_size", 0) + 0.5:
+        tips.append("建议提高 line_compression 权重")
+    if win_avg.get("avg_consistency", 0) > loss_avg.get("avg_consistency", 0) + 0.1:
+        tips.append("建议提高 drift_consistency 权重")
+    if loss_avg.get("aligned_rate", 0) > win_avg.get("aligned_rate", 0) + 0.15:
+        tips.append("建议提高 water_alignment 权重（背离时更准）")
+
+    return "；".join(tips) if tips else "当前权重配置合理，继续积累数据"
+
+
 def get_stats(history: list) -> dict:
     """计算历史统计"""
     settled = [r for r in history if r.get("correct") is not None]

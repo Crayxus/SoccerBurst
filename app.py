@@ -601,6 +601,14 @@ def api_signal_history():
     })
 
 
+@app.route("/api/reanalyze")
+def api_reanalyze():
+    """对全部历史记录进行因子提炼分析"""
+    from analyzer import load_history, reanalyze_history
+    history = load_history()
+    return jsonify(reanalyze_history(history))
+
+
 @app.route("/api/stream")
 def api_stream():
     """SSE 实时推送"""
